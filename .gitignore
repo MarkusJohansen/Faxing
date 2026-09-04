@@ -6,7 +6,10 @@ dist/
 
 # Local environment files
 .env*.local
+*.local
 
 # API server bundle and secrets
 server.cjs
 .env
+
+.DS_Store
