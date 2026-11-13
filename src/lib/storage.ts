@@ -1,31 +1,12 @@
-import type { Contestant, Screen } from '../types'
+import type { FaxingEvent, RankedContestant } from '../types'
 
-const KEY = 'faxing-state-v1'
-
-export interface PersistedState {
-  screen: Screen
-  contestants: Contestant[]
-  contestStartTime: number | null
-}
-
-export function loadState(): PersistedState | null {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return null
-    return JSON.parse(raw) as PersistedState
-  } catch {
-    return null
-  }
-}
-
-export function saveState(state: PersistedState): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state))
-  } catch {
-    // Ignore write errors (private mode, storage full, etc.)
-  }
-}
-
-export function clearState(): void {
-  localStorage.removeItem(KEY)
-}
+interface ApiEvent { id: string; title: string; event_date: string; official: boolean; attendees: RankedContestant[] }
+const adminHeaders = { 'Content-Type': 'application/json' }
+export async function adminLogin(password: string): Promise<void> { const response = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) }); if (!response.ok) { const details = await response.json().catch(() => null) as { error?: string } | null; throw new Error(details?.error || 'Login failed') } }
+export async function adminLogout(): Promise<void> { await fetch('/api/admin', { method: 'DELETE' }) }
+function fromApiEvent(event: ApiEvent): FaxingEvent { return { id: event.id, name: event.title, date: new Date(event.event_date).getTime(), official: event.official, contestants: event.attendees } }
+export async function loadEvents(): Promise<FaxingEvent[]> { const response = await fetch('/api/events'); if (!response.ok) throw new Error('Unable to load events'); return (await response.json() as ApiEvent[]).map(fromApiEvent) }
+export async function saveEvent(event: FaxingEvent): Promise<FaxingEvent> { const response = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: event.id, title: event.name, eventDate: event.date, official: event.official, attendees: event.contestants }) }); if (!response.ok) { const details = await response.json().catch(() => null) as { error?: string } | null; throw new Error(details?.error || `Unable to save event (${response.status})`) } return fromApiEvent(await response.json() as ApiEvent) }
+export async function updateEvent(event: FaxingEvent): Promise<FaxingEvent> { const response = await fetch(`/api/events?id=${encodeURIComponent(event.id)}`, { method: 'PUT', headers: adminHeaders, body: JSON.stringify({ title: event.name, eventDate: event.date, official: event.official, attendees: event.contestants }) }); if (!response.ok) throw new Error('Unable to update event'); return fromApiEvent(await response.json() as ApiEvent) }
+export async function deleteEvent(id: string): Promise<void> { const response = await fetch(`/api/events?id=${encodeURIComponent(id)}`, { method: 'DELETE' }); if (!response.ok) throw new Error('Unable to delete event') }
+export type { RankedContestant }
