@@ -5,18 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.app.json && vite build",
-    "typecheck": "tsc -p tsconfig.app.json --noEmit",
-    "preview": "vite preview"
+    "build": "tsc -p tsconfig.app.json && vite build && npm run build:server",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.server.json",
+    "preview": "vite preview",
+    "build:server": "esbuild server/index.ts --bundle --platform=node --target=node22 --format=cjs --external:pg-native --outfile=server.cjs",
+    "start": "node server.cjs"
   },
   "dependencies": {
+    "pg": "^8.23.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
+    "@vercel/node": "^13.0.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "esbuild": "^0.28.2",
     "typescript": "^5.9.3",
     "vite": "^6.0.5"
   }

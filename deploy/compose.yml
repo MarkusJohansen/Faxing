@@ -1,13 +1,42 @@
 # Reference copy of /opt/apps/faxing/compose.yml on the Pi.
 # The deploy workflow runs `docker compose pull && up -d --wait` there.
+# Secrets live in /opt/apps/faxing/.env (never committed):
+#   POSTGRES_PASSWORD=...   FAXEPAVE_PASSWORD=...
 services:
   faxing:
     image: ghcr.io/markusjohansen/faxing:main
     container_name: faxing
     restart: unless-stopped
     ports: ["127.0.0.1:4010:8080"]
+    environment:
+      # The local db has no TLS; sslmode=disable overrides the ssl option in api/events.ts.
+      DATABASE_URL: postgres://faxing:${POSTGRES_PASSWORD}@db:5432/faxing?sslmode=disable
+      FAXEPAVE_PASSWORD: ${FAXEPAVE_PASSWORD}
+    depends_on:
+      db: { condition: service_healthy }
     cpus: 0.3
-    mem_limit: 64m
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options: { max-size: 5m, max-file: "2" }
+
+  db:
+    image: postgres:17-alpine
+    container_name: faxing-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: faxing
+      POSTGRES_DB: faxing
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    command: ["postgres", "-c", "shared_buffers=16MB", "-c", "max_connections=20"]
+    volumes: ["./pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "faxing", "-d", "faxing"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    cpus: 0.3
+    mem_limit: 128m
     logging:
       driver: json-file
       options: { max-size: 5m, max-file: "2" }
