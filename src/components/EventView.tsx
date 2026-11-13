@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FaxingEvent, RankedContestant } from '../types'
+import { newId } from '../lib/id'
 
 interface Props {
   event: FaxingEvent
@@ -10,7 +11,7 @@ interface Props {
 }
 
 const formatTime = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, '0')}`
-const formatDate = (date: number) => { const timestamp = Number(date); return Number.isFinite(timestamp) && Number.isFinite(new Date(timestamp).getTime()) ? new Intl.DateTimeFormat('da-DK', { day: 'numeric', month: 'long', year: 'numeric' }).format(timestamp) : 'Ukendt dato' }
+const formatDate = (date: number) => { const timestamp = Number(date); return Number.isFinite(timestamp) && Number.isFinite(new Date(timestamp).getTime()) ? new Intl.DateTimeFormat('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' }).format(timestamp) : 'Ukjent dato' }
 const formatInputDate = (date: number) => { const timestamp = Number(date); return Number.isFinite(timestamp) && Number.isFinite(new Date(timestamp).getTime()) ? new Date(timestamp).toISOString().slice(0, 10) : '' }
 
 export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
@@ -36,7 +37,7 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
     } catch {
       // Fall through to the login guidance below.
     }
-    window.alert('Log ind som Faxepave for at redigere denne Faxing.')
+    window.alert('Logg inn som Faxepave for å rette i denne Faxing.')
   }
 
   const update = (id: string, patch: Partial<RankedContestant>) => {
@@ -50,11 +51,11 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
     const minutes = Number(newMinutes)
     const seconds = Number(newSeconds || 0)
     if (!name) return setAddError('Skriv et navn.')
-    if (!Number.isInteger(minutes) || minutes < 0) return setAddError('Indtast hele minutter på 0 eller derover.')
-    if (!Number.isInteger(seconds) || seconds < 0 || seconds > 59) return setAddError('Sekunder skal være mellem 0 og 59.')
+    if (!Number.isInteger(minutes) || minutes < 0) return setAddError('Skriv hele minutter, 0 eller mer.')
+    if (!Number.isInteger(seconds) || seconds < 0 || seconds > 59) return setAddError('Sekunder skal være mellom 0 og 59.')
 
     const attendee: RankedContestant = {
-      id: crypto.randomUUID(),
+      id: newId(),
       name,
       gender: newGender,
       finishedAt: draft.date,
@@ -71,9 +72,9 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
       setNewName('')
       setNewMinutes('')
       setNewSeconds('')
-      setSavedMessage(`${name} er tilføjet og gemt.`)
+      setSavedMessage(`${name} er føyet til og lagret.`)
     } catch {
-      setAddError('Deltageren kunne ikke gemmes. Prøv igen.')
+      setAddError('Deltageren lot seg ikke lagre. Prøv påny.')
     } finally {
       setSaving(false)
     }
@@ -84,30 +85,30 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
     setSavedMessage('')
     try {
       await onSave(draft)
-      setSavedMessage('Ændringerne er gemt i krøniken.')
+      setSavedMessage('Endringene er skrevet i krøniken.')
     } catch {
-      setSavedMessage('Ændringerne kunne ikke gemmes. Prøv igen.')
+      setSavedMessage('Endringene lot seg ikke lagre. Prøv påny.')
     } finally {
       setSaving(false)
     }
   }
 
-  const sorted = [...draft.contestants].filter(Boolean).map(contestant => ({ elapsed: Number.isFinite(Number(contestant.elapsed)) ? Number(contestant.elapsed) : 0, finishedAt: contestant.finishedAt ?? null, disqualified: Boolean(contestant.disqualified), title: contestant.title ?? null, id: contestant.id, name: contestant.name || 'Ukendt deltager', gender: contestant.gender })).sort((a, b) => (a.finishedAt ? a.elapsed : Number.MAX_SAFE_INTEGER) - (b.finishedAt ? b.elapsed : Number.MAX_SAFE_INTEGER))
+  const sorted = [...draft.contestants].filter(Boolean).map(contestant => ({ elapsed: Number.isFinite(Number(contestant.elapsed)) ? Number(contestant.elapsed) : 0, finishedAt: contestant.finishedAt ?? null, disqualified: Boolean(contestant.disqualified), title: contestant.title ?? null, id: contestant.id, name: contestant.name || 'Ukjent deltager', gender: contestant.gender })).sort((a, b) => (a.finishedAt ? a.elapsed : Number.MAX_SAFE_INTEGER) - (b.finishedAt ? b.elapsed : Number.MAX_SAFE_INTEGER))
 
   return (
     <div className="event-view scroll-panel">
       <div className="event-view-heading">
-        {!isEditing && <div className="event-admin-toolbar"><span className="admin-access-label">Faxepave</span><button className="medieval-btn edit-event-btn" type="button" onClick={openEditor}>Rediger Faxing</button></div>}
-        {canEdit && <div className="admin-edit-notice"><span className="eyebrow">Faxepave-værktøj</span><strong>Redigering er aktiv</strong><span>Ændr eventet og tryk “Gem alle ændringer”.</span></div>}
+        {!isEditing && <div className="event-admin-toolbar"><span className="admin-access-label">Faxepave</span><button className="medieval-btn edit-event-btn" type="button" onClick={openEditor}>Rett i Faxing</button></div>}
+        {canEdit && <div className="admin-edit-notice"><span className="eyebrow">Faxepavens verktøy</span><strong>Retting er i gang</strong><span>Rett begivenheten og trykk «Lagre alle endringer».</span></div>}
         {canEdit ? (
           <div className="admin-edit-form">
-            <label>Eventnavn<input className="medieval-input" value={draft.name} onChange={eventInput => setDraft({ ...draft, name: eventInput.target.value })} /></label>
+            <label>Begivenhetens navn<input className="medieval-input" value={draft.name} onChange={eventInput => setDraft({ ...draft, name: eventInput.target.value })} /></label>
             <label>Dato<input className="medieval-input" type="date" value={formatInputDate(draft.date)} onChange={eventInput => setDraft({ ...draft, date: new Date(`${eventInput.target.value}T12:00:00`).getTime() })} /></label>
-            <label className="check-label"><input type="checkbox" checked={draft.official} onChange={eventInput => setDraft({ ...draft, official: eventInput.target.checked })} /> Officiel Faxing</label>
+            <label className="check-label"><input type="checkbox" checked={draft.official} onChange={eventInput => setDraft({ ...draft, official: eventInput.target.checked })} /> Offisiell Faxing</label>
           </div>
         ) : (
           <>
-            <p className="event-date">{formatDate(event.date)} · {event.official ? 'Officiel ordenstvist' : 'Uofficiel samling'}</p>
+            <p className="event-date">{formatDate(event.date)} · {event.official ? 'Offisiell ordensdyst' : 'Uoffisiell samling'}</p>
             <h2 className="panel-title">{event.name}</h2>
           </>
         )}
@@ -116,26 +117,26 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
 
       {canEdit && (
         <form className="admin-add-attendee" onSubmit={addAttendee}>
-          <div className="admin-section-heading"><div><span className="eyebrow">Faxepave-værktøj</span><h3>Tilføj deltager</h3></div><span className="admin-section-hint">Gemmes direkte i krøniken</span></div>
+          <div className="admin-section-heading"><div><span className="eyebrow">Faxepavens verktøy</span><h3>Føy til deltager</h3></div><span className="admin-section-hint">Skrives straks i krøniken</span></div>
           <div className="admin-add-fields">
-            <label className="attendee-field attendee-name-field">Navn<input className="medieval-input" placeholder="Fx Anders Jensen" aria-label="Navn på ny deltager" value={newName} onChange={eventInput => setNewName(eventInput.target.value)} /></label>
-            <label className="attendee-field">Køn<select className="medieval-input" aria-label="Køn på ny deltager" value={newGender} onChange={eventInput => setNewGender(eventInput.target.value as 'male' | 'female' | 'other')}><option value="male">Mand</option><option value="female">Kvinde</option><option value="other">⚥ Annet</option></select></label>
+            <label className="attendee-field attendee-name-field">Navn<input className="medieval-input" placeholder="F.eks. Anders Jensen" aria-label="Navn på ny deltager" value={newName} onChange={eventInput => setNewName(eventInput.target.value)} /></label>
+            <label className="attendee-field">Kjønn<select className="medieval-input" aria-label="Kjønn på ny deltager" value={newGender} onChange={eventInput => setNewGender(eventInput.target.value as 'male' | 'female' | 'other')}><option value="male">Herre</option><option value="female">Dame</option><option value="other">⚥ Annet</option></select></label>
             <label className="attendee-field time-field">Minutter<input className="medieval-input" inputMode="numeric" placeholder="0" aria-label="Drikketid minutter" value={newMinutes} onChange={eventInput => setNewMinutes(eventInput.target.value)} /></label>
             <label className="attendee-field time-field">Sekunder<input className="medieval-input" inputMode="numeric" placeholder="00" aria-label="Drikketid sekunder" value={newSeconds} onChange={eventInput => setNewSeconds(eventInput.target.value)} /></label>
-            <button className="medieval-btn attendee-add-btn" type="submit" disabled={saving}>Tilføj og gem</button>
+            <button className="medieval-btn attendee-add-btn" type="submit" disabled={saving}>Føy til og lagre</button>
           </div>
-          <p className="attendee-help">Registrér den samlede drikketid. Sekunder skal være mellem 0 og 59.</p>
+          <p className="attendee-help">Skriv inn den samlede drikketid. Sekunder skal være mellom 0 og 59.</p>
           {addError && <p className="form-error" role="alert">{addError}</p>}
         </form>
       )}
 
       <div className="result-toolbar"><span>Resultater</span><span className="result-count">{sorted.length} deltagere</span></div>
-      <div className="results-table" role="table" aria-label={`Resultater for ${draft.name}`}><div className="results-table-head" role="row"><span>Plads</span><span>Deltager</span><span>Drikketid</span><span aria-label="Hæder" /></div>{sorted.map((contestant, index) => <ResultRow key={contestant.id} contestant={contestant} index={index} isAdmin={canEdit} onUpdate={update} />)}</div>
-      {canEdit && <div className="admin-actions"><button className="medieval-btn" onClick={save} disabled={saving}>{saving ? 'Gemmer…' : 'Gem alle ændringer'}</button><button className="medieval-btn" type="button" onClick={() => { setIsEditing(false); setDraft({ ...event, contestants: Array.isArray(event.contestants) ? event.contestants : [] }) }}>Annuller</button>{savedMessage && <span className="save-message" role="status">{savedMessage}</span>}<button className="medieval-btn danger-btn" type="button" onClick={() => { if (window.confirm('Er du sikker? Faxingen og alle dens deltagere slettes permanent.')) onDelete(draft.id) }}>Slet Faxing</button></div>}
+      <div className="results-table" role="table" aria-label={`Resultater for ${draft.name}`}><div className="results-table-head" role="row"><span>Plass</span><span>Deltager</span><span>Drikketid</span><span aria-label="Heder" /></div>{sorted.map((contestant, index) => <ResultRow key={contestant.id} contestant={contestant} index={index} isAdmin={canEdit} onUpdate={update} />)}</div>
+      {canEdit && <div className="admin-actions"><button className="medieval-btn" onClick={save} disabled={saving}>{saving ? 'Lagrer…' : 'Lagre alle endringer'}</button><button className="medieval-btn" type="button" onClick={() => { setIsEditing(false); setDraft({ ...event, contestants: Array.isArray(event.contestants) ? event.contestants : [] }) }}>Avbryt</button>{savedMessage && <span className="save-message" role="status">{savedMessage}</span>}<button className="medieval-btn danger-btn" type="button" onClick={() => { if (window.confirm('Er I visse? Faxingen og alle dens deltagere slettes for alltid.')) onDelete(draft.id) }}>Slett Faxing</button></div>}
     </div>
   )
 }
 
 function ResultRow({ contestant: c, index, isAdmin, onUpdate }: { contestant: RankedContestant; index: number; isAdmin: boolean; onUpdate: (id: string, patch: Partial<RankedContestant>) => void }) {
-  return <div className={`result-row ${c.title === 'Faxekonge' || c.title === 'Faxedronning' ? 'royal-result' : ''}`} role="row"><span className="result-rank" role="cell">{index + 1}</span><span className="result-person" role="cell">{isAdmin ? <input aria-label={`Navn på deltager ${index + 1}`} className="medieval-input admin-name-input" value={c.name} onChange={event => onUpdate(c.id, { name: event.target.value })} /> : <span className="result-name">{c.name}</span>}{isAdmin && <select aria-label={`Status for ${c.name}`} className="medieval-input admin-status" value={c.disqualified ? 'out' : c.finishedAt ? 'done' : 'active'} onChange={event => onUpdate(c.id, event.target.value === 'out' ? { disqualified: true, finishedAt: null } : event.target.value === 'done' ? { disqualified: false, finishedAt: c.finishedAt ?? Date.now() } : { disqualified: false, finishedAt: null })}><option value="done">Færdig</option><option value="active">Ikke færdig</option><option value="out">Hestemann</option></select>}</span><strong role="cell" className={c.title === 'Hestemann' || c.disqualified ? 'result-time result-shame' : 'result-time'}>{c.title === 'Hestemann' || c.disqualified ? 'Hestemann' : formatTime(c.elapsed)}</strong><span role="cell" className="result-title">{c.title === 'Faxekonge' || c.title === 'Faxedronning' ? <span className="royal-crown" aria-label={c.title} title={c.title}>♛</span> : '—'}</span></div>
+  return <div className={`result-row ${c.title === 'Faxekonge' || c.title === 'Faxedronning' ? 'royal-result' : ''}`} role="row"><span className="result-rank" role="cell">{index + 1}</span><span className="result-person" role="cell">{isAdmin ? <input aria-label={`Navn på deltager ${index + 1}`} className="medieval-input admin-name-input" value={c.name} onChange={event => onUpdate(c.id, { name: event.target.value })} /> : <span className="result-name">{c.name}</span>}{isAdmin && <select aria-label={`Status for ${c.name}`} className="medieval-input admin-status" value={c.disqualified ? 'out' : c.finishedAt ? 'done' : 'active'} onChange={event => onUpdate(c.id, event.target.value === 'out' ? { disqualified: true, finishedAt: null } : event.target.value === 'done' ? { disqualified: false, finishedAt: c.finishedAt ?? Date.now() } : { disqualified: false, finishedAt: null })}><option value="done">Fullbragt</option><option value="active">Ikke fullbragt</option><option value="out">Hestemann</option></select>}</span><strong role="cell" className={c.title === 'Hestemann' || c.disqualified ? 'result-time result-shame' : 'result-time'}>{c.title === 'Hestemann' || c.disqualified ? 'Hestemann' : formatTime(c.elapsed)}</strong><span role="cell" className="result-title">{c.title === 'Faxekonge' || c.title === 'Faxedronning' ? <span className="royal-crown" aria-label={c.title} title={c.title}>♛</span> : '—'}</span></div>
 }

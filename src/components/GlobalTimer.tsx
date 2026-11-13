@@ -22,7 +22,7 @@ export default function GlobalTimer({ elapsedMs, durationMs, contestOver }: Glob
   return (
     <div className={`global-timer ${contestOver ? 'timer-over' : ''} ${urgent ? 'timer-urgent' : ''}`}>
       <div className="timer-label">
-        {contestOver ? '⚔ Kampen er Endt ⚔' : 'Tid Tilbage'}
+        {contestOver ? '⚔ Kampen er Endt ⚔' : 'Tid Tilbake'}
       </div>
       <div className="timer-value">
         {contestOver ? 'FULLBRAGT' : formatTime(remainingMs)}

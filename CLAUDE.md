@@ -176,9 +176,10 @@ nobody writes down afterwards.
 
 Match what is already there. Concretely:
 
-- **The Danish stays Danish.** Every user-facing string is archaic Danish and that is the
-  product's voice, not an accident. Do not translate one, do not modernise the spelling, and
-  do not add an English string. Code, comments, commit messages and documentation are in
+- **The interface speaks old Norwegian.** Every user-facing string is old-fashioned but
+  readable Norwegian (`haver`, `ennu`, `påny`, `Eders`), and that is the product's voice,
+  not an accident. Do not modernise the spelling, do not slip back into Danish, and do not
+  add an English string. The five titles are names and stay as they are. Code, comments, commit messages and documentation are in
   English; the interface is not. New interface copy is written in the same register — if you
   cannot, say so and leave a marker rather than dropping in plain English.
 - **Comments justify decisions.** The value of a comment here is the *why*: why 500 ms and
@@ -236,7 +237,7 @@ phone width and a desktop width.
 - No new dependency in `package.json`.
 - No `node_modules/` or `dist/` staged.
 - No hex literal outside the token block in `index.css`.
-- No Danish string translated, and any new interface copy is in the same register.
+- Any new interface copy is in the same old-Norwegian register; none in Danish or English.
 - Any guard you added says what silent failure it catches.
 - Any measurement you claim is one you actually took, and it is written up in the change's
   `findings.md`.

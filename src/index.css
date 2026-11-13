@@ -4,45 +4,118 @@
   padding: 0;
 }
 
+/*
+ * The token block. Every colour in the application is declared here and nowhere else;
+ * App.css and the pixel art reach colour only through these names. Tokens are named by
+ * role, so a restyle changes values here and nothing downstream.
+ */
 :root {
-  --brown-darkest: #1a0f05;
-  --brown-dark:    #2c1a0a;
-  --brown-mid:     #4a2e10;
-  --brown-light:   #7a4f22;
-  --brown-warm:    #a0672d;
-  --gold-dark:     #7d5a1e;
-  --gold-mid:      #c8943a;
-  --gold-bright:   #e8c060;
-  --gold-shine:    #f5d88a;
-  --red-deep:      #8b1a1a;
-  --red-mid:       #c0392b;
-  --red-bright:    #e74c3c;
-  --cream:         #f0e6c8;
-  --parchment:     #d4b483;
-  --silver:        #b0b8c8;
-  --silver-bright: #d8e0ec;
-  --font-title:    'Cinzel Decorative', 'Cinzel', serif;
-  --font-body:     'Cinzel', serif;
-  --font-text:     'IM Fell English', Georgia, serif;
+  /* Night: the ground and every outline. */
+  --night-900: #060d0c;
+  --night-800: #0c1816;
+  --night-700: #12231f;
+  /* Stone: surfaces and structure, darkest to lightest. */
+  --stone-700: #1a302b;
+  --stone-600: #244037;
+  --stone-500: #325548;
+  --stone-400: #446e5d;
+  /* Moonlight: text and highlights. */
+  --moss-300: #6f9c85;
+  --mist-200: #96bba5;
+  --moon-100: #c2dcc2;
+  --moon-50:  #e6f2d9;
+  /* Lantern: the only warmth. Reserved for crowns and the primary action. */
+  --ember-700:   #5a2410;
+  --ember-500:   #a4471a;
+  --lantern-400: #e27d28;
+  --lantern-300: #f4a341;
+  --flame-200:   #ffd684;
+  /* Blood: failure, and the expired clock. */
+  --blood-700: #3d1412;
+  --blood-500: #8c2a22;
+  --blood-300: #e0685a;
+
+  --font-title: 'Jacquard 24', 'Jersey 20', serif;
+  --font-body:  'Jersey 20', 'Trebuchet MS', sans-serif;
+  --font-num:   'VT323', 'Courier New', monospace;
+
+  /* One "pixel" of interface: borders, notches and bevels are all multiples of it. */
+  --px: 3px;
+  /* Stepped corners: each corner loses one pixel square, so boxes read as pixel art. */
+  --notch: polygon(
+    0 var(--px), var(--px) var(--px), var(--px) 0,
+    calc(100% - var(--px)) 0, calc(100% - var(--px)) var(--px), 100% var(--px),
+    100% calc(100% - var(--px)), calc(100% - var(--px)) calc(100% - var(--px)), calc(100% - var(--px)) 100%,
+    var(--px) 100%, var(--px) calc(100% - var(--px)), 0 calc(100% - var(--px))
+  );
+  /* A headstone: the top corners step in three times, the foot stays square. */
+  --headstone: polygon(
+    0 calc(var(--px) * 6), var(--px) calc(var(--px) * 6), var(--px) calc(var(--px) * 4),
+    calc(var(--px) * 2) calc(var(--px) * 4), calc(var(--px) * 2) calc(var(--px) * 2),
+    calc(var(--px) * 4) calc(var(--px) * 2), calc(var(--px) * 4) var(--px),
+    calc(var(--px) * 6) var(--px), calc(var(--px) * 6) 0,
+    calc(100% - var(--px) * 6) 0, calc(100% - var(--px) * 6) var(--px),
+    calc(100% - var(--px) * 4) var(--px), calc(100% - var(--px) * 4) calc(var(--px) * 2),
+    calc(100% - var(--px) * 2) calc(var(--px) * 2), calc(100% - var(--px) * 2) calc(var(--px) * 4),
+    calc(100% - var(--px)) calc(var(--px) * 4), calc(100% - var(--px)) calc(var(--px) * 6),
+    100% calc(var(--px) * 6), 100% 100%, 0 100%
+  );
 }
 
 html, body {
   height: 100%;
-  background-color: var(--brown-darkest);
+  background-color: var(--night-900);
 }
 
 body {
-  font-family: var(--font-text);
-  color: var(--cream);
+  font-family: var(--font-body);
+  /* Jersey 20 has a small x-height: 1.25rem of it reads like 1rem of an ordinary sans. */
+  font-size: 1.25rem;
+  line-height: 1.3;
+  /* Each face ships one weight. A synthesised bold smears a pixel font's strokes. */
+  font-synthesis: none;
+  color: var(--moon-100);
   min-height: 100vh;
+  /* Pixel type is drawn to the grid; smoothing only blurs it. */
+  -webkit-font-smoothing: none;
+  /* A banded night sky with hard stops (no smooth gradient), under a few 3px stars. */
   background-image:
-    radial-gradient(ellipse at 20% 50%, rgba(74, 46, 16, 0.4) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(139, 26, 26, 0.2) 0%, transparent 50%),
-    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a2e10' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    linear-gradient(var(--mist-200), var(--mist-200)),
+    linear-gradient(var(--moss-300), var(--moss-300)),
+    linear-gradient(var(--mist-200), var(--mist-200)),
+    linear-gradient(var(--moss-300), var(--moss-300)),
+    linear-gradient(var(--moss-300), var(--moss-300)),
+    linear-gradient(
+      var(--night-900) 0 30%,
+      var(--night-800) 30% 62%,
+      var(--night-700) 62% 86%,
+      var(--stone-700) 86% 100%
+    );
+  background-size: 3px 3px, 3px 3px, 3px 3px, 3px 3px, 3px 3px, 100% 100%;
+  background-position: 8% 46%, 23% 71%, 79% 38%, 91% 64%, 55% 83%, 0 0;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/*
+ * clip-path cuts an ordinary outline off, so focus is drawn inside the box. Without this
+ * a keyboard user gets no focus indication at all on any notched control.
+ */
+:focus-visible {
+  outline: var(--px) solid var(--flame-200);
+  outline-offset: calc(var(--px) * -2);
+}
+
+/* Motion here is ornament only. Asked to reduce it, stop all of it. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

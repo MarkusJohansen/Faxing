@@ -16,6 +16,6 @@ export default class EventErrorBoundary extends Component<Props, State> {
 
   render() {
     if (!this.state.hasError) return this.props.children
-    return <section className="event-error-state scroll-panel"><p className="eyebrow">Faxe Ordenens arkiv</p><h2 className="panel-title">Faxingen kunne ikke vises</h2><p className="panel-desc">Denne begivenhed indeholder data i et ældre format. Krøniken er stadig intakt.</p><button className="back-link" onClick={() => window.location.reload()}>Genindlæs begivenhed</button></section>
+    return <section className="event-error-state scroll-panel"><p className="eyebrow">Faxe Ordenens arkiv</p><h2 className="panel-title">Faxingen lot seg ikke vise</h2><p className="panel-desc">Denne begivenhet er nedskrevet i en eldre form. Krøniken er ennu uskadd.</p><button className="back-link" onClick={() => window.location.reload()}>Hent begivenheten påny</button></section>
   }
 }

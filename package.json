@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -p tsconfig.app.json && vite build && npm run build:server",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.server.json",
+    "check:rules": "node src/lib/ranking.demo.ts",
     "preview": "vite preview",
     "build:server": "esbuild server/index.ts --bundle --platform=node --target=node22 --format=cjs --external:pg-native --outfile=server.cjs",
     "start": "node server.cjs"
