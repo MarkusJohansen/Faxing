@@ -1,0 +1,13 @@
+# Reference copy of /opt/apps/faxing/compose.yml on the Pi.
+# The deploy workflow runs `docker compose pull && up -d --wait` there.
+services:
+  faxing:
+    image: ghcr.io/markusjohansen/faxing:main
+    container_name: faxing
+    restart: unless-stopped
+    ports: ["127.0.0.1:4010:8080"]
+    cpus: 0.3
+    mem_limit: 64m
+    logging:
+      driver: json-file
+      options: { max-size: 5m, max-file: "2" }
