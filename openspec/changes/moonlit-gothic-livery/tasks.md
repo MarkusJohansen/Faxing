@@ -27,6 +27,8 @@
 - [x] 4.4 Walk by eye from screenshots: home and lore (360px, 1280px), empty roster (360px), running board with crowns (360px, 1280px), urgent clock and expired hour (360px)
 - [ ] 4.5 Walk the chronicle with events, the event view and the Faxepave admin tools (needs the events API and database; not run here)
 - [x] 4.6 Check `æøå` and `Æ Å Ø` render in the body face, `Æ` in the heading face, `ø` in the numeral face
-- [ ] 4.7 Check reduced motion stops all animation, and keyboard focus is visible on notched controls (not checked in a browser)
+- [x] 4.7 Check reduced motion stops all animation (0 running animations with the media feature emulated)
+- [ ] 4.10 Check keyboard focus is visible on notched controls (not checked in a browser)
+- [ ] 4.11 Watch the animations on a real phone for an hour's battery and for distraction on the board
 - [ ] 4.8 Try it on a real phone: tap targets, sticky clock under mobile Safari's toolbar
 - [x] 4.9 `openspec validate moonlit-gothic-livery --strict` passes

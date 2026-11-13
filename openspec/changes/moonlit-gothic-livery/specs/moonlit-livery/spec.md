@@ -94,12 +94,33 @@ orange, and expired in blood red.
 - **THEN** the clock is still distinguishable as urgent by its colour
 
 ### Requirement: Motion is ornamental and can be switched off
-Animation SHALL be limited to lantern flicker and the urgent clock's pulse, and SHALL stop
-entirely when the user requests reduced motion.
+Animation SHALL be ornamental, SHALL move in discrete steps and never eased glides, SHALL
+never be the only carrier of a state, and SHALL stop entirely when the user requests
+reduced motion.
+
+The page is meant to look alive in the manner of an 8-bit title screen: the scene's
+lanterns flicker and glow, its stars twinkle, cloud drifts behind the spires, fog slides
+through the arches, a window gutters, a bat crosses the moon and a cloaked wanderer carries
+a lantern over the bridge. Two torches burn at the ends of the bridge with three-frame
+flames, and fireflies blink over a graveyard in the footer. Panels and cards rise into
+place when they appear, a crown's frame breathes, and the clock's bar blinks at its leading
+edge. None of it says anything the still page does not.
+
+#### Scenario: A multi-frame sprite at rest
+- **WHEN** reduced motion is requested
+- **THEN** each torch, bat and wanderer shows exactly one frame, not its frames overlaid
 
 #### Scenario: Reduced motion
 - **WHEN** `prefers-reduced-motion: reduce` is set
 - **THEN** no element animates
+
+#### Scenario: Motion is stepped
+- **WHEN** `src/App.css` and `src/index.css` are searched for animations
+- **THEN** every one uses a `steps()` timing function
+
+#### Scenario: A crown reads without its glow
+- **WHEN** reduced motion is requested and a `Faxekonge` card is displayed
+- **THEN** the card is still distinguishable as a crown by its colour and frame
 
 ### Requirement: Text meets a readability floor
 Body text and control labels SHALL meet a contrast ratio of at least 4.5:1 against their

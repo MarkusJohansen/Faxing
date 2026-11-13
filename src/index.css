@@ -78,26 +78,58 @@ body {
   min-height: 100vh;
   /* Pixel type is drawn to the grid; smoothing only blurs it. */
   -webkit-font-smoothing: none;
-  /* A banded night sky with hard stops (no smooth gradient), under a few 3px stars. */
-  background-image:
-    linear-gradient(var(--mist-200), var(--mist-200)),
-    linear-gradient(var(--moss-300), var(--moss-300)),
-    linear-gradient(var(--mist-200), var(--mist-200)),
-    linear-gradient(var(--moss-300), var(--moss-300)),
-    linear-gradient(var(--moss-300), var(--moss-300)),
-    linear-gradient(
-      var(--night-900) 0 30%,
-      var(--night-800) 30% 62%,
-      var(--night-700) 62% 86%,
-      var(--stone-700) 86% 100%
-    );
-  background-size: 3px 3px, 3px 3px, 3px 3px, 3px 3px, 3px 3px, 100% 100%;
-  background-position: 8% 46%, 23% 71%, 79% 38%, 91% 64%, 55% 83%, 0 0;
-  background-repeat: no-repeat;
+  /* A banded night sky with hard stops (no smooth gradient). */
+  background-image: linear-gradient(
+    var(--night-900) 0 30%,
+    var(--night-800) 30% 62%,
+    var(--night-700) 62% 86%,
+    var(--stone-700) 86% 100%
+  );
   background-attachment: fixed;
 }
 
+/*
+ * The page's own stars: a few 3px squares in two sets that twinkle out of step. They are
+ * fixed behind #root, which is lifted one level so that no star shows through a panel.
+ */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: 3px 3px;
+  animation: twinkle 4.1s steps(1) infinite;
+}
+
+body::before {
+  background-image:
+    linear-gradient(var(--mist-200), var(--mist-200)),
+    linear-gradient(var(--mist-200), var(--mist-200)),
+    linear-gradient(var(--moss-300), var(--moss-300));
+  background-position: 8% 46%, 79% 38%, 55% 83%;
+}
+
+body::after {
+  background-image:
+    linear-gradient(var(--moss-300), var(--moss-300)),
+    linear-gradient(var(--mist-200), var(--mist-200)),
+    linear-gradient(var(--moss-300), var(--moss-300));
+  background-position: 23% 71%, 91% 64%, 4% 90%;
+  animation-duration: 6.3s;
+  animation-delay: -2s;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  55% { opacity: .2; }
+  70% { opacity: 1; }
+}
+
 #root {
+  position: relative;
+  z-index: 1;
   min-height: 100vh;
   display: flex;
   flex-direction: column;

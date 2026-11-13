@@ -25,7 +25,9 @@ one lands.
   dithered, and illustrations are drawn on an explicit pixel grid with `crispEdges`.
 - **A night scene**: a pixel-art banner with a moon, gothic spires, a bridge and lanterns,
   painted onto a character grid in a component and rendered as SVG. It heads the app, over a fixed banded
-  sky. Lantern flicker is the only motion, and it stops under `prefers-reduced-motion`.
+  sky. The scene is alive: lanterns flicker, stars twinkle, cloud drifts and a bat crosses
+  the moon, all in pixel steps. Cards and panels rise into place and a crown's frame
+  breathes. All of it stops under `prefers-reduced-motion`.
 - **Typography re-cast onto three families**: pixel blackletter (Jacquard 24) for the
   wordmark and headings, a pixel sans (Jersey 20) for body and controls, and a terminal
   face (VT323) for every numeral. These replace the four families loaded today (Cinzel,

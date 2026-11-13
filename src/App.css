@@ -30,11 +30,15 @@
 }
 
 .app-footer {
-  padding: 1rem;
+  padding: .6rem 1rem 1rem;
+  overflow-x: clip;
   text-align: center;
   font-size: .9rem;
   color: var(--mist-200);
-  background: var(--night-900);
+  /* The strip is the graveyard's ground (its rows 12 and 13), carried to both edges. */
+  background:
+    linear-gradient(var(--night-700), var(--night-700)) 0 calc(.6rem + var(--px) * 12) / 100% calc(var(--px) * 2) no-repeat,
+    var(--night-900);
   border-top: var(--px) solid var(--stone-600);
 }
 
@@ -92,8 +96,200 @@
   transform: translateX(-50%);
 }
 
+/*
+ * The scene is alive, in the manner of an 8-bit title screen: every motion is stepped
+ * (steps(), never eased), so things jump whole pixels instead of gliding. Lengths below
+ * are in the scene's own pixels, because CSS px inside the SVG are its user units.
+ */
 .scene-flames {
   animation: flicker 1.6s steps(1) infinite;
+}
+
+.scene-glow {
+  animation: glow 2.3s steps(1) infinite;
+}
+
+@keyframes glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+
+.scene-stars {
+  animation: twinkle 3.4s steps(1) infinite;
+}
+
+.stars-b {
+  animation-duration: 5.2s;
+  animation-delay: -1.7s;
+}
+
+/* One scene-width in 192 one-pixel steps; the layer is drawn twice so it wraps unseen. */
+.scene-clouds {
+  animation: drift 120s steps(192) infinite;
+}
+
+@keyframes drift {
+  to { transform: translateX(192px); }
+}
+
+/* A bat crosses the moon, then stays away for the rest of its cycle. */
+.scene-bat {
+  opacity: 0;
+  animation: fly 23s steps(70) infinite;
+}
+
+.bat-two {
+  animation-name: fly-back;
+  animation-duration: 37s;
+  animation-delay: -9s;
+}
+
+@keyframes fly {
+  0% { opacity: 1; transform: translate(-10px, 34px); }
+  30% { opacity: 1; transform: translate(200px, 6px); }
+  30.01%, 100% { opacity: 0; transform: translate(200px, 6px); }
+}
+
+@keyframes fly-back {
+  0% { opacity: 1; transform: translate(200px, 12px); }
+  24% { opacity: 1; transform: translate(-10px, 26px); }
+  24.01%, 100% { opacity: 0; transform: translate(-10px, 26px); }
+}
+
+/* Two-frame sprites (bat, wanderer). Frame b is hidden at rest, so with motion reduced
+   only frame a shows, instead of both drawn over each other. */
+.two-frame {
+  --beat: .18s;
+  animation: flap calc(var(--beat) * 2) steps(1) infinite;
+}
+
+.frame-b {
+  opacity: 0;
+  animation-delay: calc(var(--beat) * -1);
+}
+
+.slow-step {
+  --beat: .38s;
+}
+
+@keyframes flap {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* A cloaked wanderer carries a lantern across the bridge, one pixel at a time. */
+.scene-wanderer {
+  animation: wander 150s steps(208) infinite;
+}
+
+@keyframes wander {
+  from { transform: translateX(-8px); }
+  to { transform: translateX(200px); }
+}
+
+/* Fog slides the other way to the cloud, low through the arches. */
+.scene-fog {
+  opacity: .6;
+  animation: drift-back 90s steps(192) infinite;
+}
+
+@keyframes drift-back {
+  to { transform: translateX(-192px); }
+}
+
+.scene-window-guttering {
+  animation: gutter 7s steps(1) infinite;
+}
+
+@keyframes gutter {
+  0%, 100% { opacity: 1; }
+  62% { opacity: .3; }
+  66% { opacity: 1; }
+  70% { opacity: .2; }
+  78% { opacity: 1; }
+}
+
+/*
+ * Torches at either end of the bridge, drawn at the scene's own pixel size. The flame
+ * has three frames shown a beat each; the two torches keep different beats so that they
+ * never burn in step.
+ */
+.torch {
+  --scene-px: calc(var(--scene-h) / 64);
+  --beat: .15s;
+  position: absolute;
+  bottom: 100%;
+  width: calc(var(--scene-px) * 9);
+  height: calc(var(--scene-px) * 16);
+  pointer-events: none;
+}
+
+.torch-left {
+  left: max(.4rem, calc(50% - var(--scene-h) * 1.05));
+}
+
+.torch-right {
+  --beat: .17s;
+  right: max(.4rem, calc(50% - var(--scene-h) * 1.05));
+}
+
+.torch-frame {
+  opacity: 0;
+  animation: torch-frame calc(var(--beat) * 3) steps(1) infinite;
+}
+
+.torch .frame-0 { opacity: 1; }
+.torch .frame-1 { animation-delay: calc(var(--beat) * -2); }
+.torch .frame-2 { animation-delay: calc(var(--beat) * -1); }
+
+@keyframes torch-frame {
+  0%, 33.3% { opacity: 1; }
+  33.4%, 100% { opacity: 0; }
+}
+
+/* The footer's graveyard. Its ground runs on to both edges of a wide screen. */
+.grave-scene {
+  display: block;
+  position: relative;
+  left: 50%;
+  width: calc(var(--px) * 192);
+  height: calc(var(--px) * 14);
+  margin-bottom: .8rem;
+  transform: translateX(-50%);
+}
+
+.firefly {
+  animation: firefly 4.6s steps(1) infinite;
+}
+
+.swarm-1 { animation-duration: 6.1s; animation-delay: -2s; }
+.swarm-2 { animation-duration: 7.3s; animation-delay: -4s; }
+
+@keyframes firefly {
+  0%, 100% { opacity: 0; }
+  15% { opacity: 1; transform: translate(0, 0); }
+  40% { opacity: 1; transform: translate(1px, -1px); }
+  55% { opacity: .4; transform: translate(2px, -1px); }
+  70% { opacity: 0; }
+}
+
+/* Panels and cards rise into place in four steps when they appear. A card that moves
+   to the hall is a new element there, so a fresh finish rises in too. */
+.scroll-panel,
+.contestant-card,
+.event-card,
+.home-stats div,
+.lore-grid article {
+  animation: rise .32s steps(4) backwards;
+}
+
+.cards-grid > :nth-child(2), .home-stats div:nth-child(2), .lore-grid article:nth-child(2) { animation-delay: .07s; }
+.cards-grid > :nth-child(3), .home-stats div:nth-child(3), .lore-grid article:nth-child(3) { animation-delay: .14s; }
+.cards-grid > :nth-child(4) { animation-delay: .21s; }
+.cards-grid > :nth-child(n + 5) { animation-delay: .28s; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(calc(var(--px) * 4)); }
 }
 
 @keyframes flicker {
@@ -690,8 +886,25 @@
 }
 
 .timer-bar-fill {
+  position: relative;
   height: 100%;
   background: var(--moon-100);
+}
+
+/* A blinking block at the bar's leading edge: proof at a glance that the clock is live. */
+.timer-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: calc(var(--px) * 3);
+  background: var(--moon-50);
+  animation: blink 1s steps(1) infinite;
+}
+
+.timer-bar-fill.fill-done::after {
+  display: none;
 }
 
 /* Urgent: the one moment the interface raises its voice. Colour carries it; the blink
@@ -887,6 +1100,23 @@
   --bevel-lo: var(--stone-500);
   background-color: var(--stone-600);
   border-color: var(--night-900);
+}
+
+/* A crown's frame breathes between two lantern tones, like a flame behind glass. */
+.card-gold {
+  animation: rise .32s steps(4) backwards, king-glow 1.8s steps(1) infinite;
+}
+
+.card-rose {
+  animation: rise .32s steps(4) backwards, queen-glow 1.8s steps(1) -.9s infinite;
+}
+
+@keyframes king-glow {
+  50% { border-color: var(--flame-200); }
+}
+
+@keyframes queen-glow {
+  50% { border-color: var(--lantern-400); }
 }
 
 .title-gold { color: var(--flame-200); }

@@ -122,6 +122,45 @@ Left as is: `Angre Fullbragt` and the Faxepave edit tools still clear a recorded
 `finishedAt` on purpose. After the hour, undoing a real finish makes that contestant a
 `Hestemann` with no way back short of the admin tools.
 
+## Third pass: motion
+
+The scene is now painted in layers (sky, two star sets, clouds, town, glow, flames) so each
+can move alone. Measured in headless Chrome via `document.getAnimations()`:
+
+- Home: 13 running animations (`twinkle, drift, fly, flap, fly-back, glow, flicker`).
+- Board at 50 minutes with a king and a queen: 17, adding `blink, king-glow, queen-glow`.
+- With `prefers-reduced-motion: reduce` emulated: **0** running.
+- No horizontal scroll at 360px or 1280px with the animations on.
+
+Seen in a still screenshot only: a bat beside the moon and the cloud layer displaced. The
+motion itself was **not watched**; a headless still cannot show whether it reads as alive
+or as busy. That needs a person and a screen.
+
+A star layer at `z-index: -1` would have been painted *under* `body`'s own background and
+never seen (block backgrounds paint after negative z-index children). The stars sit at
+`z-index: auto` and `#root` is lifted to `z-index: 1` instead.
+
+Not measured: battery or frame cost over an hour on a phone. Everything animated is
+`opacity`, `transform` or `border-color` on a handful of elements, which is cheap in
+principle, but that is reasoning, not a measurement.
+
+## Fourth pass: torches and more living pixel art
+
+Added: two torches at the bridge ends (three flame frames each, on different beats), a
+cloaked wanderer with a lantern walking the bridge, fog through the arches, a guttering
+window, and a footer graveyard with three swarms of fireflies. Sprites small enough to draw
+by hand are typed as rows (`rowsToGrid`); the shared ink table moved to `src/lib/pixelInk.tsx`.
+
+- 28 running animations on the home screen; 0 with reduced motion emulated.
+- No horizontal scroll at 360px or 1280px.
+- Seen in stills: both torches, the fog, a bat on the moon, the graveyard. **Not seen**: the
+  wanderer (behind the wordmark at the moment sampled) and the fireflies (dark in that
+  frame). Their animations are running; what they look like is unchecked.
+- The wanderer passes *behind* the wordmark for the middle third of his walk, since the
+  wordmark is page content over the scene. He is visible only toward the ends of the bridge.
+- The torches are drawn at the scene's pixel size (`--scene-h / 64`), not the interface's
+  3px, so they match the bridge they stand on at both the 3× and 4× scene.
+
 ## Pre-existing, seen while verifying, not changed here (first pass)
 
 - After the hour expires, cards for contestants who never finished still show `Fuldbragt!`

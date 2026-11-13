@@ -8,11 +8,29 @@
  */
 export type Grid = string[][]
 
-export function createGrid(width: number, height: number, ink: string): Grid {
+/** The ink that draws nothing: a layer is BLANK wherever the layer beneath shows through. */
+export const BLANK = ' '
+
+export function createGrid(width: number, height: number, ink: string = BLANK): Grid {
   return Array.from({ length: height }, () => Array<string>(width).fill(ink))
 }
 
-export function gridToPaths(grid: Grid): Map<string, string> {
+/** A grid plus the three brushes every layer of the scene is painted with. */
+export function createLayer(width: number, height: number, ink: string = BLANK) {
+  const grid = createGrid(width, height, ink)
+  const set = (x: number, y: number, key: string) => {
+    if (x >= 0 && x < width && y >= 0 && y < height) grid[y][x] = key
+  }
+  const rect = (x: number, y: number, w: number, h: number, key: string) => {
+    for (let row = y; row < y + h; row++) for (let col = x; col < x + w; col++) set(col, row, key)
+  }
+  const dither = (x: number, y: number, w: number, h: number, key: string) => {
+    for (let row = y; row < y + h; row++) for (let col = x; col < x + w; col++) if ((col + row) % 2 === 0) set(col, row, key)
+  }
+  return { grid, set, rect, dither }
+}
+
+export function gridToPaths(grid: Grid): Array<[ink: string, d: string]> {
   const paths = new Map<string, string>()
   grid.forEach((row, y) => {
     let start = 0
@@ -20,9 +38,14 @@ export function gridToPaths(grid: Grid): Map<string, string> {
       if (x < row.length && row[x] === row[start]) continue
       const ink = row[start]
       const run = x - start
-      paths.set(ink, `${paths.get(ink) ?? ''}M${start} ${y}h${run}v1h-${run}z`)
+      if (ink !== BLANK) paths.set(ink, `${paths.get(ink) ?? ''}M${start} ${y}h${run}v1h-${run}z`)
       start = x
     }
   })
-  return paths
+  return [...paths]
+}
+
+/** A sprite typed as rows of ink keys, with `.` for nothing. For art small enough to draw by hand. */
+export function rowsToGrid(rows: string[]): Grid {
+  return rows.map(row => [...row].map(cell => (cell === '.' ? BLANK : cell)))
 }
