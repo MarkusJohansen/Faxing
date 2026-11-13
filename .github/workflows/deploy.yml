@@ -1,0 +1,57 @@
+# Build an arm64 image, push it to ghcr.io, and deploy it to the Raspberry Pi.
+# The Pi side lives in /opt/apps/<APP>/compose.yml; the deploy key may only run
+# /usr/local/bin/pi-deploy <APP>, which pulls and restarts that one app.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  APP: faxing                                  # folder under /opt/apps on the Pi
+  IMAGE: ghcr.io/markusjohansen/faxing          # must be lowercase
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04-arm   # native arm64, free for public repos
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:main
+            ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to the Pi
+        env:
+          DEPLOY_KEY: ${{ secrets.PI_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.PI_KNOWN_HOSTS }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/pi && chmod 600 ~/.ssh/pi
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/pi -o IdentitiesOnly=yes deploy@pi.markusjohansen.no "$APP"
