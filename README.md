@@ -26,6 +26,18 @@ npm run dev
 
 Aabne saa [http://localhost:5173](http://localhost:5173) i Eders Webbe-Leser.
 
+Begivenheds-Historikken trænger en Postgres-Database. Sæt i `.env.local`:
+
+```bash
+DATABASE_URL=postgres://user:pass@host:5432/faxing
+FAXEPAVE_PASSWORD=...   # Faxepavens Adgangsord for Redigering
+```
+
+### Drift
+
+`npm run build` bygger Appen (`dist/`) og API-Serveren (`server.cjs`); `npm start` kører begge paa Port 8080.
+Serveren opretter Tabellen `faxing_events` ved Opstart. Paa Raspberry Pi kører den med en Postgres-Beholder, se `deploy/compose.yml`.
+
 ---
 
 ## Hvorledes man afvikler en Turnering
@@ -43,6 +55,7 @@ Aabne saa [http://localhost:5173](http://localhost:5173) i Eders Webbe-Leser.
 
 - [React 18](https://react.dev/)
 - [Vite 6](https://vitejs.dev/)
+- Postgres via `api/` (Vercel-Stil Handlere), kørt af `server/index.ts` i Produktion
 - Simpel CSS med Middelalder-Stil inspireret af Faxe Bryggeri Danmarks Æstetik
 
 ---
