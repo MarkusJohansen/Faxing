@@ -1,86 +1,118 @@
-# ⚔ Faxing-Mesterskapet
+<h1 align="center">Faxing</h1>
 
-> *Eet Gammelnordisk Webbe-Verktøy for afviklingen af een **Faxing**-Turnering — den ædle
-> Kunst at fortære een hel Litre Faxe Extra Strong inden Timens Udløb.*
->
-> **Drikk med Maadehold. Kjennd Eders Grændser.**
+<p align="center">
+  <strong>A shared scoreboard for a one-hour drinking contest: the room joins from their own
+  phones, the clock is the server's, and the four titles fall out of recorded finish times.<br>
+  The titles are worked out by one pure function, and the test for it runs in under a second.</strong>
+</p>
 
-A single-page web application for running one drinking tournament. Enlist the contestants,
-start a one-hour clock, tap a card when somebody finishes their litre, and the four titles
-fall out on their own.
-
-It runs entirely in one browser on one device. There is no account, no server, and nothing
-leaves the phone.
-
-The interface is in archaic Danish. This documentation is in English, because a document
-whose job is to stop you breaking the titling rules should be precise before it is charming.
-Every Danish term is glossed in [Vocabulary](#vocabulary).
+<!-- Text, not shields.io. Remote badge images would be remote fetches at the top of the file,
+     and they rot silently when a service changes. Keep these local. -->
+<p align="center">
+  <code>node&nbsp;22</code> &nbsp;
+  <code>react&nbsp;18</code> &nbsp;
+  <code>3&nbsp;runtime&nbsp;deps</code> &nbsp;
+  <code>no&nbsp;test&nbsp;runner</code> &nbsp;
+  <code>private&nbsp;project</code>
+</p>
 
 ---
 
 ## Contents
 
-- [The rules](#the-rules)
-- [Where the project is right now](#where-the-project-is-right-now)
-- [Quickstart](#quickstart)
-- [Running it for real: the phone problem](#running-it-for-real-the-phone-problem)
-- [Every command](#every-command)
-- [Running a tournament](#running-a-tournament)
-- [The titles, precisely](#the-titles-precisely)
-- [What survives a reload](#what-survives-a-reload)
-- [Repository layout](#repository-layout)
-- [Specifications](#specifications)
-- [Working on this repository](#working-on-this-repository)
-- [Known problems](#known-problems)
-- [Vocabulary](#vocabulary)
-- [Where to go next](#where-to-go-next)
+| | |
+| --- | --- |
+| [Why this exists](#why-this-exists) | the constraint that shapes the whole design |
+| [How it works](#how-it-works) | the flow from a join to a closed chronicle |
+| [Where the project is right now](#where-the-project-is-right-now) | what runs, what is unmeasured, what is open |
+| [Quickstart](#quickstart) | what you need, and the commands to a running room |
+| [Every command](#every-command) | the full entry-point table |
+| [Repository layout](#repository-layout) | the map, with the reason each file exists |
+| [Configuration](#configuration) | the environment variables, and what is enforced about them |
+| [Measuring it](#measuring-it) | what the one check can establish, and what it cannot |
+| [Working on this repository](#working-on-this-repository) | the pre-commit step, and the rules that fail silently |
+| [Vocabulary](#vocabulary) | the Norwegian terms in the interface |
+| [Where to go next](#where-to-go-next) | the other documents, each with a reason |
 
 ---
 
-## The rules
+## Why this exists
 
-One litre of Faxe Extra Strong (10% ABV). One hour. Four possible outcomes.
+A drinking contest has one fact that matters: **who finished inside the hour, and in what
+order.** The organiser is walking a crowded room with a phone, and has to record finishes
+fast, without a second tap to confirm, and without anyone being able to argue the time
+afterwards.
 
-| Titel | Betingelse |
-|---|---|
-| 👑 **Faxekonge** | The first **man** to finish within the hour |
-| 👑 **Faxedronning** | The first **woman** to finish within the hour |
-| ⚔ **Faxeridder** | Any other warrior who finishes within the hour |
-| 🐴 **Hestemann** | Gave up, or did not finish before the hour was out |
+That constraint produces the design:
 
-Each crown is awarded once. If no woman finishes, no `Faxedronning` is crowned — the title
-is simply not awarded, and it is never given to a man instead.
+- **The finish instant is the evidence.** Titles are never stored; they are recomputed from
+  the recorded instants on every render. A stored title could disagree with the instant it
+  came from, and nothing would error.
+- **Time comes from the server, not the phone.** Once several phones share one room, a skewed
+  clock on one of them must not move a finish.
+- **Losing a contest is the worst outcome.** So the server holds the state, and a phone
+  reload, a sleeping laptop or a closed tab does not lose it.
 
-Precedence is decided by the **recorded finish instant**, not by the order in which the
-operator managed to tap the cards. This matters more than it sounds: the operator is
-crossing a crowded room, and taps the nearer card first.
+The cost is that the app needs a server and a Postgres database. Earlier versions were a
+single-page app with `localStorage` only; that was removed when the contest moved into a
+shared room.
 
-> A litre of 10% beer is roughly eight standard units, and the whole point of this
-> application is that people attempt it against a clock. The footer says
-> *Drikk med Maadehold* for a reason and it is not decoration.
+---
+
+## How it works
+
+One finish, from a participant's phone to the board:
+
+```
+participant taps "Fullbragt!"
+   │
+   ▼
+POST /api/rooms  { action: "finish" }      carries the device's member token
+   │
+   ▼
+server: lock the room row, check the caller owns the row,
+        check the hour has not run out, stamp finished_at = server now
+   │
+   ▼
+every phone polls GET /api/rooms every 2 s
+   │
+   ▼
+rankContestants(members, start, serverNow)  ──►  title, rank, group, for every card
+```
+
+Two decisions in that path are easy to get wrong:
+
+**The server stamps the time.** The phone sends an action, not a timestamp. A phone whose
+clock is wrong, or which is asleep, cannot move a finish. Each poll also carries the server's
+time, so every phone shows the same remaining time.
+
+**The same ranking function runs on the phone and on the server.** `src/lib/ranking.ts` is
+imported by both. The server uses it to write the chronicle when a room closes, so the titles
+in the archive are the titles the room saw.
+
+The full path, with the permission table and the schema, is in
+[ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
 ## Where the project is right now
 
-**Working and used.** Enlistment, the hour, the four titles, the live board, search,
-reset-with-confirmation, and full survival of a page reload mid-contest.
+| Workstream | Status | What backs it |
+| --- | --- | --- |
+| Shared rooms: join by code, host runs the start and corrections, close into the chronicle | **Built** | `openspec/changes/faxing-rooms` marked complete; commit `3dd4747` |
+| Titles: five crowns and their rules, with the forfeit and late-finish cases | **Built** | `npm run check:rules`, 7 assertions, all passing |
+| The chronicle: archive list, event view, Faxepave-only edits | **Built** | `api/events.ts`, `src/components/History.tsx`, `EventView.tsx` |
+| Moonlit night livery: header scene, torches, graveyard footer | **Built, 19 of 23 tasks** | `openspec/changes/moonlit-gothic-livery` |
+| Heraldry livery (`restyle-order-livery`) | **Specified, not built**, 0 of 66 tasks | `openspec/changes/restyle-order-livery`. Whether it still applies after the night livery is open (see below). |
+| Automated tests for the browser flows | **None** | nothing in the repo. Verification is by walking the interface. |
 
-**Adopted spec-first.** The five existing capabilities have been written up as OpenSpec
-specifications in `openspec/specs/`, reverse-engineered from the shipped implementation.
-They are the source of truth from here on. See [Specifications](#specifications).
+**Not measured.** There are no load figures for the Pi, no latency figures, and no
+benchmark. The numbers in the code (`POLL_MS = 2000`, the 0.3 CPU and 128 MB limits) were
+chosen on arithmetic and have not been tested under a real party.
 
-**One change open.** [`restyle-order-livery`](openspec/changes/restyle-order-livery/) —
-replacing the brewery livery with the order's own heraldry rendered as pixel art on a CRT.
-Specified, not yet implemented. It changes no behaviour.
-
-**Known to be broken in one important way.** Running it over a LAN address — the natural way
-to use it, laptop serving and phone operating — crashes on enlisting the first contestant.
-See [Known problems](#known-problems). Operate from the device's own `localhost` until it is
-fixed.
-
-**No test suite.** This is the largest gap in the project and it is not being hidden.
-`npm run typecheck` is the only automated check that exists.
+**Open questions for the author.** Whether `restyle-order-livery` is still wanted now that the
+night livery exists. Whether the interface should be Norwegian or Danish: the strings are old
+Norwegian, and the earlier documentation said Danish.
 
 ---
 
@@ -88,358 +120,235 @@ fixed.
 
 ### What you need first
 
-Node 18 or newer, and a browser. That is all — there is no database, no environment file, no
-API key and no service to start.
+- **Node 22.** It is what the Docker image uses and what the server bundle targets. Newer
+  Node versions build; this was checked on Node 26.
+- **A Postgres 17 database** for anything beyond the static page. Rooms, the chronicle and
+  the admin login all need it. Without one, the app opens, but every room and archive request
+  returns `503`.
+- A browser, and a phone if you want to test the join flow.
 
-### Two commands to a running tournament
+### Running it
 
 ```bash
 npm install
+```
+
+Create `.env.local` in the repository root. Use `sslmode=disable` as the compose file does for
+its local database (its comment is the reason; this was not re-tested against a live server):
+
+```bash
+DATABASE_URL=postgres://faxing:faxing@localhost:5432/faxing?sslmode=disable
+FAXEPAVE_PASSWORD=choose-a-password-for-local-use
+```
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Enlist a warrior, press
-**⚔ Begyn Kampen ⚔**, and the hour starts.
+Open [http://localhost:5173](http://localhost:5173). The dev server creates the three tables on
+start (see [ARCHITECTURE.md §6](ARCHITECTURE.md#6-persistence-and-the-database)). Create a room
+from the home screen; the room has a code, and a second device can join with it.
 
-Begivenheds-Historikken trænger en Postgres-Database. Sæt i `.env.local`:
+### Before you trust anything downstream
 
-```bash
-DATABASE_URL=postgres://user:pass@host:5432/faxing
-FAXEPAVE_PASSWORD=...   # Faxepavens Adgangsord for Redigering
-```
-
-### Drift
-
-`npm run build` bygger Appen (`dist/`) og API-Serveren (`server.cjs`); `npm start` kører begge paa Port 8080.
-Serveren opretter Tabellen `faxing_events` ved Opstart. Paa Raspberry Pi kører den med en Postgres-Beholder, se `deploy/compose.yml`.
-
----
-
-## Running it for real: the phone problem
-
-The way this application wants to be used is: serve it from a laptop, operate it from a
-phone carried around the room.
+These checks prove the install is real. Run them in order.
 
 ```bash
-npm run dev -- --host      # prints a LAN address, e.g. http://192.168.1.42:5173
+npm run typecheck     # no output and exit 0
+npm run check:rules   # seven lines beginning "ok"
+curl -s -w ' [%{http_code}]\n' http://localhost:5173/api/rooms
 ```
 
-**This currently crashes on enlisting the first contestant.** `crypto.randomUUID()` is only
-available in a secure context — HTTPS or `localhost` — and a plain-HTTP LAN address is
-neither. There is no error boundary, so the screen goes blank.
+The last command returns `[200]` with a JSON list (possibly `[]`) when the database is
+configured. If it returns `[503]` with `Database connection is not configured`, the
+`.env.local` file was not read: restart `npm run dev` after creating it.
 
-Until it is fixed, the options are:
-
-- **Operate from the serving device itself**, on `localhost`. Works today, and is fine if
-  the laptop or phone running the dev server is the one being carried.
-- **Serve over HTTPS**, or through a tunnel that terminates TLS.
-
-The fix is a four-line fallback for the identifier and it needs no specification change; see
-[ARCHITECTURE.md D4](ARCHITECTURE.md#d4-cryptorandomuuid-requires-a-secure-context).
+**Not verified in this revision:** a full run against a live Postgres with two browsers. The
+checks above were run; the room flow in a browser was not.
 
 ---
 
 ## Every command
 
 ```bash
-npm install                 # once
-npm run dev                 # Vite dev server on :5173
-npm run dev -- --host       # also serve on the LAN (see the phone problem above)
-npm run typecheck           # tsc --noEmit for app and server, strict — the only automated check
-npm run build               # tsc, vite build into dist/, then bundle the API server to server.cjs
-npm run preview             # serve the built output
-npm start                   # run server.cjs (app + events API) on :8080
+npm install                  # once
+npm run dev                  # Vite on 0.0.0.0:5173, with the /api handlers mounted
+npm run typecheck            # tsc for the app and for the server, strict
+npm run check:rules          # the titling rules, as seven assertions under Node
+npm run build                # typecheck app, Vite build to dist/, bundle server.cjs
+npm run build:server         # only the server bundle, from server/index.ts
+npm run preview              # serves dist/ only: no /api, see the note below
+npm start                    # node server.cjs: the app and the API on :8080 (needs dist/ and the env)
 
 openspec list                                # open changes
-openspec validate --specs --strict           # the main specifications
+openspec validate --specs --strict           # the five main specifications
 openspec validate <change-id> --strict       # one change
-openspec status --change <change-id>         # artifact completeness
-openspec view                                # interactive dashboard
+openspec status --change <change-id>         # which artifacts a change still lacks
 ```
 
-`npm run typecheck` before every commit.
+`npm run preview` does not mount the API: the handlers are attached only to the dev server
+(`vite.config.ts`, the `configureServer` hook). To test a production build with its API, use
+`npm run build && npm start` with the environment set.
 
----
-
-## Running a tournament
-
-### Enlisting warriors
-
-Type a name, pick **♂ Herre** or **♀ Dame**, press **+ Innskriv**.
-
-- Names are trimmed and must be unique, compared **without regard to case**. `Anders` and
-  `anders` are treated as the same person — because they usually are, and a board with the
-  same name on two cards is a board the operator cannot act on.
-- Two genuinely different people sharing a first name must be distinguished in the name
-  itself. The roster holds no other field.
-- Names cap at 30 characters, so that a card does not break.
-- **♂/♀ is not a demographic field.** It is the input to the crown rules — there are exactly
-  two crowns — and it is why the value is binary.
-- Remove anybody with **✕**. No confirmation: nothing has been earned yet, and re-typing a
-  name is cheaper than a confirmation step paid on every correction.
-
-### Starting
-
-Press **⚔ Begyn Kampen ⚔**. Disabled until at least one warrior is enlisted.
-
-This records the start instant and moves to the board. **The roster is frozen from here** —
-there is no way to add a contestant mid-contest, because every title compares finish times
-against one common start, and a latecomer would be measured from a start they did not share.
-
-### The board
-
-Three groups, in a fixed order, so the operator builds muscle memory for where a card lives:
-
-| Group | Contains |
-|---|---|
-| ⚔ **Ærens Hal** | Everybody who has finished, ranked by finish instant |
-| ⏳ **Drikker Endnu** | Everybody still going |
-| 🐴 **Hestemann** | Everybody who gave up, plus — once the hour is out — everybody who did not finish |
-
-An empty group is not displayed at all. A heading with nothing under it reads, across a
-room, as a card that failed to render.
-
-The timer at the top shows time **remaining** as the main figure, with elapsed time beneath
-it — remaining is what the room is acting on, elapsed is the unit the finishing times on the
-cards are in. Under five minutes it goes urgent.
-
-### Recording a finish, and a forfeit
-
-When somebody empties their can, press **🍺 Fuldbragt!** on their card. When somebody gives
-up, press **✕ Gav Op** — they become a `Hestemann` immediately, regardless of the time left.
-
-Neither is confirmed, deliberately. These are pressed in a crowd at arm's length; a
-confirmation is a second thing to hit, and a missed finish loses the instant that decides a
-crown. Both controls disappear once a contestant is resolved, which is what stops a card
-being pressed twice.
-
-A forfeit does **not** consume a crown. Somebody who gave up did not finish, so the next
-man or woman to finish still takes the title.
-
-### Searching
-
-At five or more contestants a search bar appears. Substring match, case-insensitive — the
-operator is as likely to have been handed a surname as a first name.
-
-Filtering only hides cards. **Ranks and titles stay computed over the whole roster**, so a
-filtered board never renumbers second place into first.
-
-### When the hour is out
-
-The timer declares **⚔ Kampen er Endt ⚔** and every unfinished warrior moves to
-`Hestemann`. Nothing needs pressing; the transition is not an event.
-
-### Starting over
-
-**↩ Ny Turnering**, then confirm. This is the one confirmed action on the board, because it
-is the only irreversible one: it discards the roster, the start instant and every finish
-instant, with no undo and no record kept.
-
----
-
-## The titles, precisely
-
-The rule the tournament states is *within the hour*, and every title is decided by one pure
-function of recorded facts:
-
-```
-disqualified                        → Hestemann
-finished, male, crown unclaimed     → Faxekonge
-finished, female, crown unclaimed   → Faxedronning
-finished                            → Faxeridder
-not finished, hour expired          → Hestemann
-otherwise                           → no title yet
-```
-
-Two things follow that are worth stating plainly:
-
-**No title is ever stored.** Titles are recomputed from the finish instants on every render.
-That is why a reload restores the same crowns, and why it is impossible for a stored title
-to disagree with the facts behind it.
-
-**Holding no title is not the same as being a `Hestemann`.** A contestant who is still
-drinking has no title. Rendering that as failure would condemn everybody for the first
-fifty-nine minutes.
-
-There is currently **one place where the code disagrees with these rules**: a finish
-recorded *after* the hour has expired still earns a knighthood, or a vacant crown. See
-[Known problems](#known-problems).
-
----
-
-## What survives a reload
-
-All of it. The roster, the recorded finishes, the forfeits, which screen you were on, and
-the clock — at the right place, not where it was interrupted.
-
-The contest's start is stored as an absolute instant and every duration is derived from it,
-so the hour keeps running while the tab is closed, the app is backgrounded or the laptop is
-asleep. An hour of wall-clock time is an hour of contest.
-
-The limits are worth knowing:
-
-- **One device, one browser profile.** The tournament is in `localStorage`. Opening the app
-  on a second device starts a second, empty tournament. There is no sync and cannot be
-  without a backend.
-- **A private window may not persist.** If the browser refuses storage, the tournament runs
-  normally but will not survive a reload. You are not warned, because there is nothing to be
-  done about it mid-contest.
-- **Confirming a reset erases it.** That is the point of the confirmation.
+`npm run dev -- --host` is not needed: the dev server already listens on every interface
+(`vite.config.ts`).
 
 ---
 
 ## Repository layout
 
 ```
-index.html                     Vite entry; the Google Fonts request
-vite.config.ts                 Vite + React plugin. Nothing else.
-tsconfig*.json                 Strict, with noUnusedLocals / noUnusedParameters
+index.html                    the page shell, and the Google Fonts request
+vite.config.ts                Vite, the React plugin, and the dev-only /api mount
+tsconfig*.json                app and server configs, both strict
+package.json                  the scripts, and three runtime deps: react, react-dom, pg
 
 src/
-├── main.tsx                   Mounts <App /> in StrictMode
-├── App.tsx                    ALL tournament state, the titling rules, the 500 ms tick
-├── types.ts                   Contestant, RankedContestant, Title, Gender, Screen
-├── index.css                  Reset, the colour and font token block, the page ground
-├── App.css                    Every component rule (~650 lines)
+├── main.tsx                  mounts <App /> in StrictMode
+├── App.tsx                   screen state, the clock, the room in view, and the chronicle links
+├── types.ts                  the contestant, title and room shapes, shared with the server
+├── index.css                 the reset and the colour tokens
+├── App.css                   every component rule
 ├── lib/
-│   └── storage.ts             localStorage read / write / clear. 30 lines.
+│   ├── ranking.ts            the only place a title is decided: pure, shared with the server
+│   ├── ranking.demo.ts       the seven assertions behind npm run check:rules
+│   ├── contest.ts            CONTEST_DURATION_MS, declared once for client and server
+│   ├── rooms.ts              room polling, actions, and the tokens kept on the device
+│   ├── storage.ts            fetch wrappers for the chronicle (/api/events, /api/admin)
+│   ├── id.ts                 a UUID that works on plain HTTP, where randomUUID is missing
+│   └── pixelArt.ts, pixelInk.tsx   pixel-art helpers for the livery
 └── components/
-    ├── Registration.tsx       Enlistment screen
-    ├── Arena.tsx              Live board: grouping, search, reset confirmation
-    ├── GlobalTimer.tsx        The hour, formatted. Pure presentation.
-    └── ContestantCard.tsx     One warrior's card. Pure presentation.
+    ├── RoomsPanel.tsx        the home screen's room list and create button (src/App.tsx:73)
+    ├── RoomLobby.tsx         the room before the start, while startedAt is null (src/App.tsx:78)
+    ├── Arena.tsx             the live board: groups, search, close (src/App.tsx:79)
+    ├── ContestantCard.tsx    one card: finish, forfeit, and the host's corrections
+    ├── GlobalTimer.tsx       the hour: remaining time, urgency, expiry
+    ├── History.tsx, EventView.tsx   the chronicle list, and one archived contest (src/App.tsx:81-82)
+    └── NightScene, Torch, GraveScene, HostGuide   the livery, and the host's how-to (not read in detail)
+
+api/                          Vercel-style handlers, run unchanged by the Pi server
+├── rooms.ts                  the room actions, with the permission checks in one place
+├── events.ts                 the chronicle: reads are open, writes need Faxepave
+├── admin.ts                  Faxepave login: sets the session cookie
+├── _auth.ts                  tokens, hashes, and the Faxepave check (underscore: not a route)
+└── _db.ts                    one Postgres pool per process
+
+server/
+├── api.ts                    maps the handlers onto plain Node, and creates the schema
+└── index.ts                  the production server: static files, /healthz, and /api
+
+deploy/compose.yml            the Pi's compose file, as a reference copy
+Dockerfile                    the two-stage image: build, then run server.cjs
+.github/workflows/deploy.yml  build an arm64 image, push it, and deploy to the Pi
 
 openspec/
-├── specs/                     The five capabilities — the source of truth
-└── changes/                   Open changes, spec-first
-
-ARCHITECTURE.md                How it works, the invariants, the known defects
-CLAUDE.md                      Working conventions and the hard rules
+├── specs/                    the five capabilities: the source of truth for behaviour
+└── changes/                  work in progress, each with a proposal, deltas and tasks
 ```
-
-`App.tsx` is where the tournament is. Everything in `components/` takes props and returns
-markup.
 
 ---
 
-## Specifications
+## Configuration
 
-Behaviour is defined before it is built. The `openspec/specs/` directory is the source of
-truth for what this application does — not the code.
+Two environment variables matter. Both are read from `.env*` files in development and from the
+process environment in production.
 
-| Capability | Covers |
-|---|---|
-| [`contestant-roster`](openspec/specs/contestant-roster/spec.md) | Enlistment, validation, the start gate |
-| [`contest-clock`](openspec/specs/contest-clock/spec.md) | The hour, the tick, urgency, expiry |
-| [`title-award`](openspec/specs/title-award/spec.md) | The four titles and who gets them |
-| [`arena-board`](openspec/specs/arena-board/spec.md) | The live board, grouping, search, reset |
-| [`session-persistence`](openspec/specs/session-persistence/spec.md) | Surviving a reload |
+| Variable | Read by | What it does |
+| --- | --- | --- |
+| `DATABASE_URL` (or `POSTGRES_URL`) | `api/_db.ts`, `server/api.ts` | The database. Absent means every `/api` request returns `503`. |
+| `FAXEPAVE_PASSWORD` | `api/admin.ts`, `api/_auth.ts` | The operator's password. Absent means **nobody can log in** and no official room can be made. |
 
-These were written from the shipped implementation when the project adopted OpenSpec, so
-they record real behaviour rather than an aspiration. **Where a spec and the code disagree,
-the spec is right and the code has a defect.**
+Two things are enforced about them, and both fail quietly:
 
-Open changes live in `openspec/changes/<id>/` as a proposal, delta specs, a design and a
-task list. One is open:
+- **The session cookie is an HMAC of the password.** Changing `FAXEPAVE_PASSWORD` logs every
+  device out. That is the intended effect, and it is also why a rotation during a live
+  contest is disruptive.
+- **The database URL's TLS setting.** The pool asks for TLS with `rejectUnauthorized: false`
+  (`api/_db.ts`). A URL with `sslmode=disable` overrides that. The local compose database has no
+  TLS, so omitting it fails the connection.
 
-- [**`restyle-order-livery`**](openspec/changes/restyle-order-livery/) — replace the brewery
-  livery with the order's own heraldry: a semantic near-black / bone / blood-red palette, a
-  CRT atmospheric layer, the pixel-art sigil, the motto *In Faxe Veritas*, and the chant
-  *Gloria Faxem!*. Two new capabilities, `order-livery` and `crt-display`. No behaviour
-  changes.
+There are no other configuration files. The timing constants are code, not settings:
+`CONTEST_DURATION_MS` in `src/lib/contest.ts`, `POLL_MS` in `src/lib/rooms.ts`.
+
+---
+
+## Measuring it
+
+**What exists:** `npm run check:rules` runs seven assertions over the titling function under
+Node. It covers the four titles, the still-drinking and expired cases, the forfeit that does
+not consume a crown, the late finish that cannot claim one, and the board's order. Each
+assertion names the silent failure it guards.
+
+**What it can establish:** that the titling function gives the right answer for the cases it
+lists.
+
+**What it structurally cannot establish:** anything about the server (the permission checks,
+the row lock, the chronicle write), anything in the browser, and anything about performance.
+There are no benchmarks and no load tests. The stated limits, such as the Pi's 0.3 CPU and 128
+MB, are configuration, not measurements.
+
+**Results so far:** seven of seven assertions pass as of this revision. Nothing else is
+measured.
+
+---
+
+## The one hard problem
+
+A fresh clone has everything it needs to build and to run the static page, and **nothing** of
+the live contest. Rooms, the chronicle and the login all live in a Postgres database that you
+must run and configure yourself. The repository holds no data, so a fresh clone cannot show
+the chronicle of past contests.
 
 ---
 
 ## Working on this repository
 
-Read [CLAUDE.md](CLAUDE.md) for the conventions and the hard rules, and
-[ARCHITECTURE.md](ARCHITECTURE.md) for how the thing actually works. The short version:
+Read [CLAUDE.md](CLAUDE.md) for the conventions and the hard rules. Before you commit, run
+`npm run typecheck`.
 
-- **Two runtime dependencies.** Keep it that way. `Date.now()`, integer arithmetic and
-  `localStorage` cover everything here.
-- **Never store a title, never accumulate elapsed time, never clear a `finishedAt`.** All
-  three fail silently. [ARCHITECTURE.md §9](ARCHITECTURE.md#9-invariants) has the full list
-  and the reasoning.
-- **The Danish stays Danish.** Every interface string is archaic Danish and that is the
-  product's voice. Code, comments and docs are English; the interface is not.
-- **Colours go through a token.** Every colour in `App.css` resolves to a custom property in
-  `index.css`. That seam is what makes the livery replaceable.
-- **Spec it first** unless it is a genuine one-off — and if you skip the spec, say in one
-  line why that was safe.
+The rules whose violation **fails silently** are the ones to remember:
 
-### Technology
-
-- [React 18](https://react.dev/) — two components deep, no context, no store, no router
-- [TypeScript 5](https://www.typescriptlang.org/) — strict
-- [Vite 6](https://vitejs.dev/)
-- Postgres via `api/` (Vercel-style handlers), served by `server/index.ts` in production
-- Hand-written CSS, ~700 lines, no framework and no preprocessor
-- [OpenSpec](https://github.com/Fission-AI/OpenSpec) for the specifications
-
----
-
-## Known problems
-
-Real, reproducible, and each one a candidate for its own change. Full write-ups in
-[ARCHITECTURE.md §10](ARCHITECTURE.md#10-known-defects).
-
-| | Problem | Effect |
-|---|---|---|
-| **D1** | A finish recorded after the hour still earns a title | Tapping **🍺 Fuldbragt!** on a `Hestemann` card after expiry promotes them to `Faxeridder` — or to `Faxekonge`, if no man finished in time. The controls are still on the card after the hour. This violates the stated rule and the specification. |
-| **D2** | The per-card progress bar is the global clock | Every warrior's beer-fill bar and percentage are identical: it measures the hour, not the person. Nothing about an individual's drinking is recorded, so the bar states a measurement that was never taken. |
-| **D3** | `markDisqualified` clears a recorded finish | Not reachable from the interface today, but a live code path one prop change away from destroying the evidence behind a crown. |
-| **D4** | `crypto.randomUUID()` needs a secure context | Over a plain-HTTP LAN address, enlisting the first contestant throws and the screen goes blank. This breaks the intended laptop-serves / phone-operates setup. |
-| **D5** | Persisted state is cast, not validated | A malformed stored value flows into React state unexamined and fails later, somewhere else, as a blank screen. |
-| **D6** | `loadState()` runs three times on mount | Harmless. Noted because the obvious tidy-up — hoisting the call to module scope — is subtly wrong. |
-
-`node_modules/` is also currently tracked in git by mistake. A `.gitignore` now exists;
-untracking the 2,430 committed files is a separate, deliberate commit.
+- **Never compute a title anywhere except `rankContestants()`.** Storing one creates a second
+  source of truth. The chronicle is the single exception, and it freezes titles at close.
+- **Never count time up.** Every duration is a difference of two absolute instants. A timer
+  that counts ticks stops when the tab sleeps and reports an expired contest as open.
+- **A forfeit is checked before the crown branches.** Otherwise a contestant who gave up takes
+  a crown and the next real finisher is left a knight.
+- **Titles and ranks are computed over the whole roster, not the filtered view.** Otherwise a
+  search renumbers second place as first.
 
 ---
 
 ## Vocabulary
 
-| Danish | Meaning |
-|---|---|
-| **Faxing** | The contest: one litre of Faxe Extra Strong (10%) within one hour |
-| **Faxekonge** | *Faxe king* — first man to finish within the hour |
-| **Faxedronning** | *Faxe queen* — first woman to finish within the hour |
-| **Faxeridder** | *Faxe knight* — any other warrior who finishes within the hour |
-| **Hestemann** | *Horseman* — gave up, or did not finish in time |
-| **Kriger** | *Warrior* — a contestant |
-| **Herre / Dame** | *Lord / Lady* — the two gender options |
-| **Innskriv** | *Enlist* — add a contestant |
-| **Begyn Kampen** | *Begin the battle* — start the hour |
-| **Fuldbragt** | *Accomplished* — record a finish |
-| **Gav Op** | *Gave up* — record a forfeit |
-| **Ærens Hal** | *Hall of honour* — the finishers' group |
-| **Drikker Endnu** | *Still drinking* — the in-progress group |
-| **Kampen er Endt** | *The battle has ended* — the hour is out |
-| **Ny Turnering** | *New tournament* — reset |
-| **Søk efter en Kriger** | *Search for a warrior* |
-| **Drikk med Maadehold** | *Drink in moderation* |
-
-Arriving with [`restyle-order-livery`](openspec/changes/restyle-order-livery/):
+The interface is in old-fashioned Norwegian. Code, comments and documentation are in English.
+These are the terms a developer will meet in the interface and the code.
 
 | Term | Meaning |
-|---|---|
-| **In Faxe Veritas** | *In Faxe, truth* — the order's motto |
-| **Gloria Faxem!** | *Glory to Faxe!* — the order's chant; opens a contest and acclaims a crown |
-| **Registrum / Vigilia / Arena / Chronica** | The Latin plaques naming enlistment, the clock, the in-progress group and the hall of honour |
+| --- | --- |
+| **Faxing** | the contest: one litre of strong beer, within one hour |
+| **Faxekonge** | first man to finish within the hour |
+| **Faxedronning** | first woman to finish within the hour |
+| **Faxemonark** | first `Annet` (other) finisher within the hour |
+| **Faxeridder** | any other finisher within the hour |
+| **Hestemann** | gave up, finished late, or did not finish in time: the failure title |
+| **Faxepave** | the operator, who logs in with `FAXEPAVE_PASSWORD` |
+| **Verten** | the host: the device that created the room, or Faxepave for an official room |
+| **Kriger** | a contestant |
+| **Ærens Hal** | the board group for finishers |
+| **Drikker Ennu** | the board group for people still going |
+| **Fullbragt** | finished (the button is *Fullbragt!*) |
+| **Gav Opp** | gave up (the button is *Gav Opp*) |
 
 ---
 
 ## Where to go next
 
-- **To run one** — [Quickstart](#quickstart), then
-  [Running it for real](#running-it-for-real-the-phone-problem).
-- **To understand it** — [ARCHITECTURE.md](ARCHITECTURE.md). Start at §2–4: three pieces of
-  state, one clock, and everything else derived.
-- **To change it** — [CLAUDE.md](CLAUDE.md) for the rules, then `openspec/specs/` for what
-  the application is contracted to do.
-- **To fix something real** — [Known problems](#known-problems). D1 is the one that gets a
-  title wrong; D4 is the one that stops the application being used as intended.
-
----
-
-*⚜ Drikk med Maadehold ⚜*
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** for how the system fits together: the state, the
+  rooms API, the schema, the known defects, and the decisions that were rejected.
+- **[CLAUDE.md](CLAUDE.md)** for the working rules and the list to check before you call a
+  change finished.
+- **`openspec/specs/`** for what the application is specified to do. Where a spec and the code
+  disagree, the spec is the intended behaviour.
+- **`openspec/changes/faxing-rooms/`** for why rooms exist and what was decided for them.
+- **[ARCHITECTURE.md §10](ARCHITECTURE.md#10-known-defects)** for the defects still open.
