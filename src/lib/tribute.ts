@@ -1,11 +1,11 @@
-import type { FaxingEvent, RankedContestant, Title } from '../types'
+import type { ArchivedContestant, FaxingEvent, Title } from '../types'
 
 /** The crowns, in the order they are honoured. Knights and Hestemann are not crowns. */
 const CROWNS: readonly Title[] = ['Faxekonge', 'Faxedronning', 'Faxemonark']
 
 export interface Tribute {
   event: FaxingEvent
-  crowns: RankedContestant[]
+  crowns: ArchivedContestant[]
 }
 
 /**
