@@ -10,30 +10,36 @@
  * role, so a restyle changes values here and nothing downstream.
  */
 :root {
-  /* Night: the ground and every outline. */
-  --night-900: #060d0c;
-  --night-800: #0c1816;
-  --night-700: #12231f;
-  /* Stone: surfaces and structure, darkest to lightest. */
-  --stone-700: #1a302b;
-  --stone-600: #244037;
-  --stone-500: #325548;
-  --stone-400: #446e5d;
-  /* Moonlight: text and highlights. */
-  --moss-300: #6f9c85;
-  --mist-200: #96bba5;
-  --moon-100: #c2dcc2;
-  --moon-50:  #e6f2d9;
-  /* Lantern: the only warmth. Reserved for crowns and the primary action. */
-  --ember-700:   #5a2410;
-  --ember-500:   #a4471a;
-  --lantern-400: #e27d28;
-  --lantern-300: #f4a341;
-  --flame-200:   #ffd684;
+  /* Night: the ground and every outline. Deep indigo, as the sky above a campfire. */
+  --night-900: #0b0d1f;
+  --night-800: #121630;
+  --night-700: #1b2142;
+  /* Stone: surfaces and structure, darkest to lightest. Slate blue, as distant mountains. */
+  --stone-700: #262d4f;
+  --stone-600: #333d63;
+  --stone-500: #46527a;
+  --stone-400: #5d6c94;
+  /* Moonlight: text and highlights. Cool steel to silver, as firelit armour. */
+  --moss-300: #8a9abb;
+  --mist-200: #aab6cf;
+  --moon-100: #d0d8e6;
+  --moon-50:  #eef1f6;
+  /* Dusk: the header sky only, plum to rust to a low amber horizon. Never on the board,
+     where warmth must keep meaning a crown; dusk-300 sits darker than lantern-400 so
+     the bridge lanterns still read against the horizon. */
+  --dusk-700: #4b2a4a;
+  --dusk-500: #8e3d2a;
+  --dusk-300: #c46a28;
+  /* Lantern: campfire. On the board, reserved for crowns and the primary action. */
+  --ember-700:   #5c1f12;
+  --ember-500:   #b0441c;
+  --lantern-400: #f07a1e;
+  --lantern-300: #ffa52e;
+  --flame-200:   #ffe08a;
   /* Blood: failure, and the expired clock. */
-  --blood-700: #3d1412;
-  --blood-500: #8c2a22;
-  --blood-300: #e0685a;
+  --blood-700: #3a1020;
+  --blood-500: #8f2433;
+  --blood-300: #ec6670;
 
   --font-title: 'Jacquard 24', 'Jersey 20', serif;
   --font-body:  'Jersey 20', 'Trebuchet MS', sans-serif;
