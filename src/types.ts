@@ -33,6 +33,11 @@ export type RecordedTitle = Title | 'Erkekonge' | 'Kronprins' | 'Prins'
 export interface ArchivedContestant extends Contestant {
   title: RecordedTitle | null
   elapsed: number | null
+  /**
+   * The person key of the full name this entry stands for, set when the record wrote a first
+   * name only. Absent means the person is whoever the name says: see personKey().
+   */
+  personId?: string
 }
 
 export interface FaxingEvent {

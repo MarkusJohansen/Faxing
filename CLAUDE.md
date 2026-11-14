@@ -40,7 +40,7 @@ Nothing here is worth an abstraction that pays off "later".
 npm install               # once
 npm run dev               # Vite on :5173, with the /api handlers mounted (needs DATABASE_URL)
 npm run typecheck         # tsc for app and server, strict: run before every commit
-npm run check:rules       # the titling rules, seven assertions under node
+npm run check:rules       # the demos in src/lib (titling, tribute, people, suggestions, honours) under node
 npm run build             # typecheck app, build dist/, bundle server.cjs
 npm start                 # node server.cjs on :8080 (needs dist/, DATABASE_URL, FAXEPAVE_PASSWORD)
 ```
@@ -131,8 +131,8 @@ habits (comments say why, named constants, `useCallback`, strict TypeScript) are
 
 ## Testing
 
-There is one test: `npm run check:rules`, which runs `src/lib/ranking.demo.ts` under node. It
-has seven assertions, and each names the silent failure it guards.
+There is one test command: `npm run check:rules`, which runs the `src/lib/*.demo.ts` files under
+node. Each assertion names the silent failure it guards.
 
 If you change the titling rules, change the function in `ranking.ts` and add an assertion that
 would have failed before the change. If you fix a bug, add the assertion that would have caught
@@ -149,7 +149,7 @@ width.
 Each line is something you can confirm with one command or one search.
 
 - `npm run typecheck` exits 0.
-- `npm run check:rules` prints seven `ok` lines.
+- `npm run check:rules` prints only `ok` lines and exits 0.
 - `npm run build` exits 0.
 - `openspec validate --specs --strict` passes, and `openspec validate <change-id> --strict`
   passes for any change you touched.

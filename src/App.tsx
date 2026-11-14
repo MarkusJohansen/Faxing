@@ -15,6 +15,7 @@ import Lore from './components/Lore'
 import type { Screen, FaxingEvent } from './types'
 import { rankContestants } from './lib/ranking'
 import { newId } from './lib/id'
+import { countPeople } from './lib/people'
 import { CONTEST_DURATION_MS } from './lib/contest'
 import { createRoom, useRoom } from './lib/rooms'
 import { loadEvents, saveEvent, updateEvent, deleteEvent, adminLogin as adminLoginRequest, adminLogout } from './lib/storage'
@@ -64,7 +65,8 @@ export default function App() {
   const activeEvent = events.find(event => event.id === activeEventId)
   // Keyed on events, not the 500 ms tick: the crowns change only when the chronicle does.
   const tribute = useMemo(() => reigningTribute(events), [events])
-  const completed = events.reduce((total, event) => total + event.contestants.length, 0)
+  // People, not entries: someone who attended three Faxinger is one name in the chronicle.
+  const peopleCount = useMemo(() => countPeople(events), [events])
   const navigate = (next: Screen) => setScreen(next)
   const adminLogin = async (event: React.FormEvent) => { event.preventDefault(); try { await adminLoginRequest(loginInput); setIsAdmin(true); setLoginOpen(false); setLoginInput(''); setLoginError('') } catch { setLoginError('Galt løsen.') } }
   const logout = async () => { await adminLogout(); setIsAdmin(false) }
@@ -75,12 +77,12 @@ export default function App() {
   return <div className={`app-root screen-${screen}`}>
     <header className="app-header"><NightScene /><div className="header-center"><button className="brand-button" onClick={() => navigate('home')}><h1 className="app-title">Faxing</h1></button></div><button className="admin-login-button" onClick={() => isAdmin ? logout() : setLoginOpen(value => !value)}>{isAdmin ? 'Faxepave · Logg ut' : 'Faxepave · Logg inn'}</button>{loginOpen && <form className="admin-login-popover" onSubmit={adminLogin}><label htmlFor="admin-password">Faxepavens løsen</label><input id="admin-password" className="medieval-input" type="password" autoFocus value={loginInput} onChange={event => setLoginInput(event.target.value)} /><button className="medieval-btn" type="submit">Logg inn</button>{loginError && <p className="form-error">{loginError}</p>}</form>}<nav className="main-nav"><Torch className="torch-left" /><Torch className="torch-right" /><button className={screen === 'home' ? 'nav-link active' : 'nav-link'} onClick={() => navigate('home')}>Hjem</button><button className={screen === 'history' || screen === 'event' ? 'nav-link active' : 'nav-link'} onClick={() => navigate('history')}>Faxinger</button><button className={screen === 'lore' ? 'nav-link active' : 'nav-link'} onClick={() => navigate('lore')}>Historie</button></nav></header>
     <main className="app-main">
-      {screen === 'home' && <section className="home-screen scroll-panel"><p className="eyebrow">Faxe Ordenens samlingssted</p><h2 className="panel-title">Velkommen til Faxing</h2><p className="panel-desc">Her samles Ordenens gamle krøniker, nye dyster og de navn som haver drukket seg inn i historien.</p>{roomCode && room && <div className="ongoing-event-banner"><div><span className="eyebrow">I gang nu</span><strong>{room.title}</strong><span>{room.members.length} deltagere er innskrevet</span></div><button className="medieval-btn" onClick={() => setScreen('room')}>Tilbake til Rommet</button></div>}<div className="home-stats"><div><strong>{events.length}</strong><span>Faxinger avholdt</span></div><div><strong>{completed}</strong><span>Navn i krøniken</span></div><div><strong>{events.filter(event => event.official).length}</strong><span>Offisielle dyster</span></div></div>{tribute && <ReigningTribute tribute={tribute} />}<RoomsPanel isAdmin={isAdmin} onOpen={openRoom} onCreate={startRoom} /><HostGuide /></section>}
+      {screen === 'home' && <section className="home-screen scroll-panel"><p className="eyebrow">Faxe Ordenens samlingssted</p><h2 className="panel-title">Velkommen til Faxing</h2><p className="panel-desc">Her samles Ordenens gamle krøniker, nye dyster og de navn som haver drukket seg inn i historien.</p>{roomCode && room && <div className="ongoing-event-banner"><div><span className="eyebrow">I gang nu</span><strong>{room.title}</strong><span>{room.members.length} deltagere er innskrevet</span></div><button className="medieval-btn" onClick={() => setScreen('room')}>Tilbake til Rommet</button></div>}<div className="home-stats"><div><strong>{events.length}</strong><span>Faxinger avholdt</span></div><div><strong>{peopleCount}</strong><span>Navn i krøniken</span></div><div><strong>{events.filter(event => event.official).length}</strong><span>Offisielle dyster</span></div></div>{tribute && <ReigningTribute tribute={tribute} />}<RoomsPanel isAdmin={isAdmin} onOpen={openRoom} onCreate={startRoom} /><HostGuide /></section>}
       {screen === 'room' && <>
         {roomError && <p className="form-error room-error" role="alert">{roomError}</p>}
         {!room && !roomError && <section className="event-loading scroll-panel"><h2 className="panel-title">Henter Rommet…</h2></section>}
         {!room && roomError && <section className="event-loading scroll-panel"><button className="back-link" onClick={leaveRoom}>Tilbake til samlingsstedet</button></section>}
-        {room && room.startedAt === null && <RoomLobby room={room} onAct={act} />}
+        {room && room.startedAt === null && <RoomLobby room={room} events={events} onAct={act} />}
         {room && room.startedAt !== null && <Arena title={room.title} code={room.code} rankedContestants={ranked} contestStartTime={room.startedAt} now={roomNow} durationMs={CONTEST_DURATION_MS} you={room.you} onAct={act} />}
       </>}
       {screen === 'history' && <History events={events} onOpen={event => { setActiveEventId(event.id); setScreen('event') }} onCreate={addPastEvent} isAdmin={isAdmin} />}
