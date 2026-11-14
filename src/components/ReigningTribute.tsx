@@ -19,7 +19,7 @@ export default function ReigningTribute({ tribute }: Props) {
             <span className="royal-crown" aria-hidden="true">♛</span>
             <span className="reigning-crown-title">{crown.title}</span>
             <strong className="reigning-name">{crown.name}</strong>
-            <span className="reigning-time">{formatTime(crown.elapsed)}</span>
+            <span className="reigning-time">{crown.elapsed === null ? 'Tid ukjent' : formatTime(crown.elapsed)}</span>
           </li>
         ))}
       </ul>
