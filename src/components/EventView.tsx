@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FaxingEvent, RankedContestant } from '../types'
 import { newId } from '../lib/id'
+import { formatDate, formatTime } from '../lib/format'
 
 interface Props {
   event: FaxingEvent
@@ -10,8 +11,6 @@ interface Props {
   onDelete: (id: string) => Promise<void>
 }
 
-const formatTime = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, '0')}`
-const formatDate = (date: number) => { const timestamp = Number(date); return Number.isFinite(timestamp) && Number.isFinite(new Date(timestamp).getTime()) ? new Intl.DateTimeFormat('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' }).format(timestamp) : 'Ukjent dato' }
 const formatInputDate = (date: number) => { const timestamp = Number(date); return Number.isFinite(timestamp) && Number.isFinite(new Date(timestamp).getTime()) ? new Date(timestamp).toISOString().slice(0, 10) : '' }
 
 export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
