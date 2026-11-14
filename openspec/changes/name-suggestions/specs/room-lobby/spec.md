@@ -8,25 +8,25 @@ and diacritics, SHALL accept a name typed in part, and SHALL tolerate one mistyp
 word of five letters or more.
 
 #### Scenario: A first name suggests the full name
-- **WHEN** "Arne" is typed and the chronicle holds "Arne Hildrum"
-- **THEN** "Arne Hildrum" is suggested
+- **WHEN** "Tora" is typed and the chronicle holds "Tora Prøvesen"
+- **THEN** "Tora Prøvesen" is suggested
 
 #### Scenario: A typo still finds the person
-- **WHEN** "Sivert Varum" is typed and the chronicle holds "Sivert Vårum"
-- **THEN** "Sivert Vårum" is suggested
+- **WHEN** "Ase Eksemple" is typed and the chronicle holds "Åse Eksempel"
+- **THEN** "Åse Eksempel" is suggested
 
 #### Scenario: A short name is not blurred
-- **WHEN** "Arne" is typed and the chronicle holds "Ådne Svendstrud" and "Anne Nilsen"
+- **WHEN** "Tora" is typed and the chronicle holds "Tara Test" and "Tore Test"
 - **THEN** neither is suggested, because a word of four letters may not carry a slip
 
 #### Scenario: Two people share a first name
-- **WHEN** "Kasper" is typed and the chronicle holds "Kasper Lie Nordbø" and
-  "Kasper Schaug-Pettersen"
+- **WHEN** "Kira" is typed and the chronicle holds "Kira Lie Test" and "Kira Schaug-Test"
 - **THEN** both are suggested and neither is chosen for the person
 
 #### Scenario: One person is listed once
-- **WHEN** a person attended three Faxings, once recorded as "Arne" linked to "Arne Hildrum"
-- **THEN** they appear once, as "Arne Hildrum"
+- **WHEN** a person attended three Faxinger, once written "Tora" and mapped by the alias record to
+  "Tora Prøvesen"
+- **THEN** they appear once, as "Tora Prøvesen"
 
 #### Scenario: The exact name needs no suggestion
 - **WHEN** the typed name equals a suggested name exactly
@@ -38,8 +38,8 @@ last recorded for them. The person SHALL remain free to change either before sub
 that matches no suggestion SHALL still be accepted as typed.
 
 #### Scenario: A suggestion is chosen
-- **WHEN** "Arne" is typed and "Arne Hildrum" is chosen
-- **THEN** the name field reads "Arne Hildrum" and the gender is the one recorded for him
+- **WHEN** "Tora" is typed and "Tora Prøvesen" is chosen
+- **THEN** the name field reads "Tora Prøvesen" and the gender is the one recorded for them
 
 #### Scenario: A new name is typed
 - **WHEN** a name matching nobody is submitted
@@ -50,5 +50,5 @@ A suggestion whose name already belongs to a member of this room SHALL be shown 
 choosable, because a room admits a name once.
 
 #### Scenario: The person is already in
-- **WHEN** "Arne Hildrum" is in the room and "Arne" is typed
-- **THEN** "Arne Hildrum" is listed as already enlisted and cannot be chosen
+- **WHEN** "Tora Prøvesen" is in the room and "Tora" is typed
+- **THEN** "Tora Prøvesen" is listed as already enlisted and cannot be chosen

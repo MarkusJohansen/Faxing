@@ -5,7 +5,7 @@ export const MAX_SUGGESTIONS = 5
 const MIN_QUERY = 2
 /**
  * A word this long may carry one mistyped letter; a shorter one must match exactly or as a start.
- * At four letters one slip matched "Arne" to Ådne, Anne and Are.
+ * At four letters one slip matched a first name to its near neighbours (Tora to Tara, Tore, Tori).
  */
 const FUZZY_FROM = 5
 
@@ -77,7 +77,8 @@ function nameScore(typed: string[], name: string): number {
 /** The people the chronicle holds, each once, however often and however they were written. */
 /**
  * `canonical` are full names that may exist as a person with no entry spelling them out: the
- * chronicle wrote "Markus", the person is "Markus Johansen", and that is the name to offer.
+ * chronicle wrote a first name, the person is the full name in src/data/people.json, and that is
+ * the name to offer.
  */
 export function peopleOf(events: FaxingEvent[], canonical: string[] = []): Person[] {
   const fullNames = new Map(canonical.map(name => [nameKey(name), name]))

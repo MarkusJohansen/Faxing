@@ -790,7 +790,8 @@
 .honoured-saint { --honour: var(--moon-50); }
 
 /* An inset edge, not a border: it must not push the name out of line with unmarked rows. */
-.contestant-item.honoured {
+.contestant-item.honoured,
+.results-table .result-row.honoured {
   box-shadow: inset calc(var(--px) * 2) 0 0 var(--honour);
 }
 
@@ -803,7 +804,8 @@
   margin-left: auto;
 }
 
-.suggestion-btn .honour-mark {
+.suggestion-btn .honour-mark,
+.result-person .honour-mark {
   margin-left: 0;
 }
 
@@ -2083,4 +2085,92 @@
 
 .host-guide li span {
   color: var(--mist-200);
+}
+
+/* ── Honours pop ──────────────────────────────────────────
+   Last in the file on purpose: the results table sets its own row backgrounds, and these must win.
+   Each honour has its own light: a saint breathes a halo, the pope shimmers gold, a champion's
+   ember flickers. Still frames are already readable; motion only adds to them. */
+.contestant-item.honoured,
+.results-table .result-row.honoured {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--honour) 18%, transparent), transparent 62%);
+  box-shadow: inset calc(var(--px) * 2) 0 0 var(--honour), 0 0 .5rem color-mix(in srgb, var(--honour) 26%, transparent);
+}
+
+.suggestion-btn.honoured:not(:disabled) {
+  box-shadow: 0 0 .6rem color-mix(in srgb, var(--honour) 38%, transparent);
+}
+
+.honour-mark > span[aria-hidden] {
+  display: inline-block;
+}
+
+.honoured-saint .honour-mark,
+.honoured-champion .honour-mark {
+  text-shadow: 0 0 .5rem var(--honour);
+}
+
+.results-table .result-written {
+  flex: none;
+  font-size: .8rem;
+  color: var(--mist-200);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes halo-breathe {
+    0%, 100% { box-shadow: inset calc(var(--px) * 2) 0 0 var(--honour), 0 0 .35rem color-mix(in srgb, var(--honour) 22%, transparent); }
+    50% { box-shadow: inset calc(var(--px) * 2) 0 0 var(--honour), 0 0 1.25rem color-mix(in srgb, var(--honour) 58%, transparent); }
+  }
+  @keyframes chip-glow {
+    0%, 100% { box-shadow: 0 0 .3rem color-mix(in srgb, var(--honour) 25%, transparent); }
+    50% { box-shadow: 0 0 1rem color-mix(in srgb, var(--honour) 60%, transparent); }
+  }
+  @keyframes glyph-twinkle {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: .8; }
+    50% { transform: scale(1.4) rotate(20deg); opacity: 1; }
+  }
+  @keyframes gold-sweep {
+    from { background-position: 160% 0; }
+    to { background-position: -60% 0; }
+  }
+  @keyframes ember-flicker {
+    0%, 100% { text-shadow: 0 0 .2rem var(--honour); }
+    35% { text-shadow: 0 0 .7rem var(--honour); }
+    55% { text-shadow: 0 0 .3rem var(--honour); }
+    75% { text-shadow: 0 0 .6rem var(--honour); }
+  }
+  @keyframes crown-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+  }
+
+  .contestant-item.honoured-saint,
+  .results-table .result-row.honoured-saint { animation: halo-breathe 3.6s ease-in-out infinite; }
+  .contestant-item.honoured-pope,
+  .results-table .result-row.honoured-pope { animation: halo-breathe 4.4s ease-in-out infinite; }
+  .contestant-item.honoured-champion,
+  .results-table .result-row.honoured-champion { animation: halo-breathe 2.8s ease-in-out infinite; }
+
+  /* Rows should not breathe in step: shift each by its place in the list. */
+  .contestant-item.honoured:nth-child(3n + 2),
+  .results-table .result-row.honoured:nth-child(3n + 2) { animation-delay: -1.2s; }
+  .contestant-item.honoured:nth-child(3n),
+  .results-table .result-row.honoured:nth-child(3n) { animation-delay: -2.4s; }
+
+  .suggestion-btn.honoured:not(:disabled) { animation: chip-glow 3.2s ease-in-out infinite; }
+
+  .honoured-saint .honour-mark { animation: ember-flicker 3.6s ease-in-out infinite; }
+  .honoured-saint .honour-mark > span[aria-hidden] { animation: glyph-twinkle 2.4s ease-in-out infinite; }
+
+  .honoured-champion .honour-mark { animation: ember-flicker 2.6s ease-in-out infinite; }
+  .honoured-champion .honour-mark > span[aria-hidden] { animation: crown-bob 2.6s ease-in-out infinite; }
+
+  .honoured-pope .honour-mark {
+    background: linear-gradient(100deg, var(--honour) 0 38%, var(--moon-50) 50%, var(--honour) 62% 100%) 160% 0 / 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gold-sweep 3.2s linear infinite;
+  }
 }
