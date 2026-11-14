@@ -1,37 +1,30 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import NightScene from './components/NightScene'
 import Torch from './components/Torch'
 import GraveScene from './components/GraveScene'
-import Registration from './components/Registration'
 import Arena from './components/Arena'
 import History from './components/History'
 import EventView from './components/EventView'
 import EventErrorBoundary from './components/EventErrorBoundary'
-import type { Contestant, RankedContestant, Screen, FaxingEvent } from './types'
+import RoomLobby from './components/RoomLobby'
+import RoomsPanel from './components/RoomsPanel'
+import HostGuide from './components/HostGuide'
+import type { Screen, FaxingEvent } from './types'
 import { rankContestants } from './lib/ranking'
 import { newId } from './lib/id'
+import { CONTEST_DURATION_MS } from './lib/contest'
+import { createRoom, useRoom } from './lib/rooms'
 import { loadEvents, saveEvent, updateEvent, deleteEvent, adminLogin as adminLoginRequest, adminLogout } from './lib/storage'
 import './App.css'
 
-const CONTEST_DURATION_MS = 60 * 60 * 1000
-const ACTIVE_FAXING_KEY = 'faxing-active-event'
-type ActiveFaxingDraft = { name: string; official: boolean; password: string; contestants: Contestant[]; contestStartTime: number }
-type ActiveEventDetails = { name: string; official: boolean; password?: string }
-
-function parseActiveEventDetails(value: string | null): ActiveEventDetails | null {
-  if (!value?.startsWith('{')) return null
-  try {
-    const parsed = JSON.parse(value) as Partial<ActiveEventDetails>
-    return typeof parsed.name === 'string' && typeof parsed.official === 'boolean' ? parsed as ActiveEventDetails : null
-  } catch {
-    return null
-  }
-}
+// The room lives in the URL, so a reload, or a link sent round the table, lands in it.
+const ROOM_PARAM = 'rom'
+const initialRoomCode = () => new URLSearchParams(window.location.search).get(ROOM_PARAM)?.toUpperCase() || null
+const setRoomInUrl = (code: string | null) => window.history.replaceState(null, '', code ? `?${ROOM_PARAM}=${code}` : window.location.pathname)
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('home')
-  const [contestants, setContestants] = useState<Contestant[]>([])
-  const [contestStartTime, setContestStartTime] = useState<number | null>(null)
+  const [roomCode, setRoomCode] = useState<string | null>(initialRoomCode)
+  const [screen, setScreen] = useState<Screen>(() => (initialRoomCode() ? 'room' : 'home'))
   const [events, setEvents] = useState<FaxingEvent[]>([])
   const [activeEventId, setActiveEventId] = useState<string | null>(null)
   const [now, setNow] = useState(Date.now())
@@ -39,45 +32,32 @@ export default function App() {
   const [loginOpen, setLoginOpen] = useState(false)
   const [loginInput, setLoginInput] = useState('')
   const [loginError, setLoginError] = useState('')
+  const { room, error: roomError, act, offset } = useRoom(roomCode)
 
   useEffect(() => { const interval = setInterval(() => setNow(Date.now()), 500); return () => clearInterval(interval) }, [])
-  useEffect(() => { loadEvents().then(setEvents).catch(error => console.error('[v0] Could not load events:', error)); fetch('/api/admin').then(response => response.json()).then(result => setIsAdmin(result.authenticated === true)).catch(() => setIsAdmin(false)) }, [])
-  useEffect(() => {
-    const rawDraft = localStorage.getItem(ACTIVE_FAXING_KEY)
-    if (!rawDraft) return
-    try {
-      const draft = JSON.parse(rawDraft) as ActiveFaxingDraft
-      if (draft.contestStartTime && draft.name && draft.contestants?.length) {
-        setContestants(draft.contestants)
-        setContestStartTime(draft.contestStartTime)
-        setActiveEventId(JSON.stringify({ name: draft.name, official: draft.official, password: draft.password }))
-        setScreen('arena')
-      } else localStorage.removeItem(ACTIVE_FAXING_KEY)
-    } catch {
-      localStorage.removeItem(ACTIVE_FAXING_KEY)
-    }
-  }, [])
-  useEffect(() => {
-    if (!activeEventId || !contestStartTime || !contestants.length || screen === 'history' || screen === 'event') return
-    const details = parseActiveEventDetails(activeEventId)
-    if (!details) return
-    const draft: ActiveFaxingDraft = { ...details, password: details.password ?? '', contestants, contestStartTime }
-    localStorage.setItem(ACTIVE_FAXING_KEY, JSON.stringify(draft))
-  }, [activeEventId, contestStartTime, contestants, screen])
+  useEffect(() => { loadEvents().then(setEvents).catch(error => console.error('Could not load events:', error)); fetch('/api/admin').then(response => response.json()).then(result => setIsAdmin(result.authenticated === true)).catch(() => setIsAdmin(false)) }, [])
 
-  const startContest = useCallback((name: string, official: boolean, password?: string) => { if (!contestants.length) return; setContestStartTime(Date.now()); setScreen('arena'); setActiveEventId(JSON.stringify({ name, official, password: password ?? '' })) }, [contestants])
-  const addContestant = useCallback((name: string, gender: Contestant['gender']) => setContestants(value => [...value, { id: newId(), name, gender, finishedAt: null, disqualified: false }]), [])
-  const removeContestant = useCallback((id: string) => setContestants(value => value.filter(contestant => contestant.id !== id)), [])
-  // Refuses a finish once the hour is out: the card hides its controls then, but a tap that
-  // was already in flight at expiry would otherwise still record a late finish.
-  const markFinished = useCallback((id: string) => { const instant = Date.now(); if (contestStartTime === null || instant - contestStartTime >= CONTEST_DURATION_MS) return; setContestants(value => value.map(contestant => contestant.id === id && !contestant.finishedAt && !contestant.disqualified ? { ...contestant, finishedAt: instant } : contestant)) }, [contestStartTime])
-  // Never touches a recorded finish: that instant is the only evidence behind a crown, and
-  // clearing it would turn a Faxekonge into a Hestemann with nothing left to show for it.
-  const markDisqualified = useCallback((id: string) => setContestants(value => value.map(contestant => contestant.id === id && !contestant.finishedAt ? { ...contestant, disqualified: true } : contestant)), [])
-  const editContestant = useCallback((id: string, patch: Partial<Contestant>) => setContestants(value => value.map(contestant => contestant.id === id ? { ...contestant, ...patch } : contestant)), [])
-  const ranked = useCallback((): RankedContestant[] => rankContestants(contestants, contestStartTime, now, CONTEST_DURATION_MS), [contestants, contestStartTime, now])
+  // Closing a room happens once, on whichever device the host holds; every other device sees
+  // eventId appear on its next poll. The effect keys on eventId, so it fires on that
+  // transition only, not on every tick after it.
+  const closedEventId = room?.eventId ?? null
+  useEffect(() => {
+    if (!closedEventId) return
+    loadEvents().then(setEvents).catch(error => console.error('Could not load events:', error))
+    setActiveEventId(closedEventId)
+    setRoomCode(null)
+    setRoomInUrl(null)
+    setScreen('event')
+  }, [closedEventId])
 
-  const finishEvent = async () => { if (!activeEventId || !contestStartTime) return; const details = parseActiveEventDetails(activeEventId); if (!details) return; try { const saved = await saveEvent({ id: newId(), name: details.name, official: details.official, password: details.password, date: contestStartTime, contestants: ranked() }); localStorage.removeItem(ACTIVE_FAXING_KEY); setEvents(value => [saved, ...value]); setContestants([]); setContestStartTime(null); setActiveEventId(null); setScreen('history') } catch (error) { console.error('[v0] Could not save event:', error); alert('Faxingen lot seg ikke lagre. Eders deltagere er ennu bevart på stedet — prøv påny.') } }
+  // The server's clock, not this phone's: offset is measured on every poll.
+  const roomNow = now + offset.current
+  const ranked = useMemo(() => room?.startedAt != null ? rankContestants(room.members, room.startedAt, roomNow, CONTEST_DURATION_MS) : [], [room, roomNow])
+
+  const openRoom = useCallback((code: string) => { setRoomCode(code); setRoomInUrl(code); setScreen('room') }, [])
+  const startRoom = useCallback(async (title: string, official: boolean) => { const created = await createRoom(title, official); openRoom(created.code) }, [openRoom])
+  const leaveRoom = () => { setRoomCode(null); setRoomInUrl(null); setScreen('home') }
+
   const activeEvent = events.find(event => event.id === activeEventId)
   const completed = events.reduce((total, event) => total + event.contestants.length, 0)
   const navigate = (next: Screen) => setScreen(next)
@@ -85,8 +65,23 @@ export default function App() {
   const logout = async () => { await adminLogout(); setIsAdmin(false) }
   const saveAdminEvent = async (event: FaxingEvent) => { const saved = await updateEvent(event); setEvents(value => value.map(item => item.id === saved.id ? saved : item)) }
   const removeAdminEvent = async (id: string) => { await deleteEvent(id); setEvents(value => value.filter(event => event.id !== id)); setScreen('history'); setActiveEventId(null) }
-  const ongoingDetails = parseActiveEventDetails(activeEventId)
   const addPastEvent = async () => { const name = window.prompt('Navn på den gamle Faxing')?.trim(); if (!name) return; const dateValue = window.prompt('Dato (YYYY-MM-DD)', new Date().toISOString().slice(0, 10)); if (!dateValue) return; const official = window.confirm('Skal dette være en offisiell Faxing?'); const saved = await saveEvent({ id: newId(), name, date: new Date(`${dateValue}T12:00:00`).getTime(), official, contestants: [] }); setEvents(value => [saved, ...value]); setActiveEventId(saved.id); setScreen('event') }
 
-  return <div className={`app-root screen-${screen}`}><header className="app-header"><NightScene /><div className="header-center"><button className="brand-button" onClick={() => navigate('home')}><h1 className="app-title">Faxing</h1></button></div><button className="admin-login-button" onClick={() => isAdmin ? logout() : setLoginOpen(value => !value)}>{isAdmin ? 'Faxepave · Logg ut' : 'Faxepave · Logg inn'}</button>{loginOpen && <form className="admin-login-popover" onSubmit={adminLogin}><label htmlFor="admin-password">Faxepavens løsen</label><input id="admin-password" className="medieval-input" type="password" autoFocus value={loginInput} onChange={event => setLoginInput(event.target.value)} /><button className="medieval-btn" type="submit">Logg inn</button>{loginError && <p className="form-error">{loginError}</p>}</form>}<nav className="main-nav"><Torch className="torch-left" /><Torch className="torch-right" /><button className={screen === 'home' ? 'nav-link active' : 'nav-link'} onClick={() => navigate('home')}>Hjem</button><button className={screen === 'history' || screen === 'event' ? 'nav-link active' : 'nav-link'} onClick={() => navigate('history')}>Faxinger</button><button className={screen === 'lore' ? 'nav-link active' : 'nav-link'} onClick={() => navigate('lore')}>Historie</button></nav></header><main className="app-main">{screen === 'home' && <section className="home-screen scroll-panel"><p className="eyebrow">Faxe Ordenens samlingssted</p><h2 className="panel-title">Velkommen til Faxing</h2><p className="panel-desc">Her samles Ordenens gamle krøniker, nye dyster og de navn som haver drukket seg inn i historien.</p>{screen === 'home' && ongoingDetails && <div className="ongoing-event-banner"><div><span className="eyebrow">I gang nu</span><strong>{ongoingDetails.name}</strong><span>{contestants.length} deltagere er innskrevet</span></div><button className="medieval-btn" onClick={() => setScreen('arena')}>Se deltagerne</button></div>}<div className="home-stats"><div><strong>{events.length}</strong><span>Faxinger avholdt</span></div><div><strong>{completed}</strong><span>Navn i krøniken</span></div><div><strong>{events.filter(event => event.official).length}</strong><span>Offisielle dyster</span></div></div><button className="medieval-btn start-btn" onClick={() => navigate('create')}>Begynn en ny Faxing</button></section>}{screen === 'create' && <Registration contestants={contestants} onAdd={addContestant} onRemove={removeContestant} onStart={startContest} isAdmin={isAdmin} />}{screen === 'arena' && contestStartTime && <Arena rankedContestants={ranked()} contestStartTime={contestStartTime} now={now} durationMs={CONTEST_DURATION_MS} onFinish={markFinished} onDisqualify={markDisqualified} onReset={finishEvent} canManage={isAdmin && (parseActiveEventDetails(activeEventId)?.official ?? false) === true} canMarkProgress={!(parseActiveEventDetails(activeEventId)?.official ?? false) || isAdmin} isAdmin={isAdmin && (parseActiveEventDetails(activeEventId)?.official ?? false) === true} onEditContestant={editContestant} />}{screen === 'history' && <History events={events} onOpen={event => { setActiveEventId(event.id); setScreen('event') }} onCreate={addPastEvent} isAdmin={isAdmin && (parseActiveEventDetails(activeEventId)?.official ?? false) === true} />}{screen === 'event' && screen === 'event' && !activeEvent ? <section className="event-loading scroll-panel"><p className="eyebrow">Faxe Ordenens arkiv</p><h2 className="panel-title">Henter Faxing…</h2><button className="back-link" onClick={() => setScreen('history')}>Tilbake til krøniken</button></section> : activeEvent && <EventErrorBoundary><EventView event={activeEvent} isAdmin={isAdmin && (parseActiveEventDetails(activeEventId)?.official ?? false) === true} onBack={() => navigate('history')} onSave={saveAdminEvent} onDelete={removeAdminEvent} /></EventErrorBoundary>}{screen === 'lore' && <section className="lore-screen scroll-panel"><p className="eyebrow">Faxe Ordenens annaler</p><h2 className="panel-title">Historien om Faxe Ordenen</h2><p className="panel-desc">En orden bygget på fellesskap, mot og den edle kunst å tømme en Faxe innen timens utløp.</p><div className="lore-grid"><article><span className="lore-year">1901</span><h3>Ordenen grunnlegges</h3><p>De første riddere samles ved bryggeriet og sverger den eldgamle ed.</p></article><article><span className="lore-year">Hvert semester</span><h3>Den offisielle dyst</h3><p>En ny konge og dronning innskrives i krøniken.</p></article><article><span className="lore-year">I dag</span><h3>Tradisjonen lever</h3><p>Enhver kan føye sitt navn til historien.</p></article></div></section>}</main><footer className="app-footer"><GraveScene /><p>Faxe Ordenens offisielle arkiv · Brygget med ære</p><p className="moderation-notice">Drikk med måte, og pass på hverandre.</p></footer></div>
+  return <div className={`app-root screen-${screen}`}>
+    <header className="app-header"><NightScene /><div className="header-center"><button className="brand-button" onClick={() => navigate('home')}><h1 className="app-title">Faxing</h1></button></div><button className="admin-login-button" onClick={() => isAdmin ? logout() : setLoginOpen(value => !value)}>{isAdmin ? 'Faxepave · Logg ut' : 'Faxepave · Logg inn'}</button>{loginOpen && <form className="admin-login-popover" onSubmit={adminLogin}><label htmlFor="admin-password">Faxepavens løsen</label><input id="admin-password" className="medieval-input" type="password" autoFocus value={loginInput} onChange={event => setLoginInput(event.target.value)} /><button className="medieval-btn" type="submit">Logg inn</button>{loginError && <p className="form-error">{loginError}</p>}</form>}<nav className="main-nav"><Torch className="torch-left" /><Torch className="torch-right" /><button className={screen === 'home' ? 'nav-link active' : 'nav-link'} onClick={() => navigate('home')}>Hjem</button><button className={screen === 'history' || screen === 'event' ? 'nav-link active' : 'nav-link'} onClick={() => navigate('history')}>Faxinger</button><button className={screen === 'lore' ? 'nav-link active' : 'nav-link'} onClick={() => navigate('lore')}>Historie</button></nav></header>
+    <main className="app-main">
+      {screen === 'home' && <section className="home-screen scroll-panel"><p className="eyebrow">Faxe Ordenens samlingssted</p><h2 className="panel-title">Velkommen til Faxing</h2><p className="panel-desc">Her samles Ordenens gamle krøniker, nye dyster og de navn som haver drukket seg inn i historien.</p>{roomCode && room && <div className="ongoing-event-banner"><div><span className="eyebrow">I gang nu</span><strong>{room.title}</strong><span>{room.members.length} deltagere er innskrevet</span></div><button className="medieval-btn" onClick={() => setScreen('room')}>Tilbake til Rommet</button></div>}<div className="home-stats"><div><strong>{events.length}</strong><span>Faxinger avholdt</span></div><div><strong>{completed}</strong><span>Navn i krøniken</span></div><div><strong>{events.filter(event => event.official).length}</strong><span>Offisielle dyster</span></div></div><RoomsPanel isAdmin={isAdmin} onOpen={openRoom} onCreate={startRoom} /><HostGuide /></section>}
+      {screen === 'room' && <>
+        {roomError && <p className="form-error room-error" role="alert">{roomError}</p>}
+        {!room && !roomError && <section className="event-loading scroll-panel"><h2 className="panel-title">Henter Rommet…</h2></section>}
+        {!room && roomError && <section className="event-loading scroll-panel"><button className="back-link" onClick={leaveRoom}>Tilbake til samlingsstedet</button></section>}
+        {room && room.startedAt === null && <RoomLobby room={room} onAct={act} />}
+        {room && room.startedAt !== null && <Arena title={room.title} code={room.code} rankedContestants={ranked} contestStartTime={room.startedAt} now={roomNow} durationMs={CONTEST_DURATION_MS} you={room.you} onAct={act} />}
+      </>}
+      {screen === 'history' && <History events={events} onOpen={event => { setActiveEventId(event.id); setScreen('event') }} onCreate={addPastEvent} isAdmin={isAdmin} />}
+      {screen === 'event' && !activeEvent ? <section className="event-loading scroll-panel"><p className="eyebrow">Faxe Ordenens arkiv</p><h2 className="panel-title">Henter Faxing…</h2><button className="back-link" onClick={() => setScreen('history')}>Tilbake til krøniken</button></section> : screen === 'event' && activeEvent && <EventErrorBoundary><EventView event={activeEvent} isAdmin={isAdmin} onBack={() => navigate('history')} onSave={saveAdminEvent} onDelete={removeAdminEvent} /></EventErrorBoundary>}
+      {screen === 'lore' && <section className="lore-screen scroll-panel"><p className="eyebrow">Faxe Ordenens annaler</p><h2 className="panel-title">Historien om Faxe Ordenen</h2><p className="panel-desc">En orden bygget på fellesskap, mot og den edle kunst å tømme en Faxe innen timens utløp.</p><div className="lore-grid"><article><span className="lore-year">1901</span><h3>Ordenen grunnlegges</h3><p>De første riddere samles ved bryggeriet og sverger den eldgamle ed.</p></article><article><span className="lore-year">Hvert semester</span><h3>Den offisielle dyst</h3><p>En ny konge og dronning innskrives i krøniken.</p></article><article><span className="lore-year">I dag</span><h3>Tradisjonen lever</h3><p>Enhver kan føye sitt navn til historien.</p></article></div></section>}
+    </main>
+    <footer className="app-footer"><GraveScene /><p>Faxe Ordenens offisielle arkiv · Brygget med ære</p><p className="moderation-notice">Drikk med måte, og pass på hverandre.</p></footer>
+  </div>
 }

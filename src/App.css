@@ -73,15 +73,15 @@
  * half of the scene (the bridge and its lanterns), which gives the height back to the
  * board on a phone.
  */
-.screen-arena {
+.screen-room {
   --scene-crop: calc(var(--scene-h) * .5);
 }
 
-.screen-arena .app-title {
+.screen-room .app-title {
   font-size: 3.4rem;
 }
 
-.screen-arena .header-center {
+.screen-room .header-center {
   padding-bottom: calc(var(--scene-h) * .17);
 }
 
@@ -1744,7 +1744,7 @@
     gap: .6rem;
   }
 
-  .screen-arena .app-title {
+  .screen-room .app-title {
     font-size: 3rem;
   }
 
@@ -1788,4 +1788,98 @@
   .admin-actions .danger-btn {
     margin-left: 0;
   }
+}
+
+/* ── Rooms ────────────────────────────────────────────── */
+.rooms-panel {
+  margin-top: 1.5rem;
+}
+
+.room-code-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .4rem 1rem;
+  margin: .5rem 0 1rem;
+}
+
+/* The code is read aloud across a room, so it is the largest thing in the lobby. */
+.room-code {
+  font-family: var(--font-num);
+  font-size: 3rem;
+  letter-spacing: .3em;
+  color: var(--flame-200);
+}
+
+.room-code-input {
+  text-transform: uppercase;
+  letter-spacing: .2em;
+}
+
+.room-heading {
+  text-align: center;
+}
+
+.room-error {
+  max-width: 40rem;
+  margin: 0 auto 1rem;
+  text-align: center;
+}
+
+.card-own {
+  outline: var(--px) solid var(--lantern-300);
+}
+
+.card-time-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .6rem;
+}
+
+.card-time-form .medieval-input {
+  width: 6rem;
+}
+
+.host-guide {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: var(--px) solid var(--night-900);
+}
+
+.host-guide summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+  color: var(--flame-200);
+}
+
+/* display:flex drops the native disclosure triangle, which is the only hint the heading
+   unfolds; this puts one back. */
+.host-guide summary::before {
+  content: '▸';
+  margin-right: .5rem;
+}
+
+.host-guide[open] summary::before {
+  content: '▾';
+}
+
+.host-guide ol {
+  display: grid;
+  gap: .9rem;
+  margin: .75rem 0 1rem;
+  padding-left: 1.5rem;
+}
+
+.host-guide li strong {
+  display: block;
+  color: var(--moon-50);
+}
+
+.host-guide li span {
+  color: var(--mist-200);
 }

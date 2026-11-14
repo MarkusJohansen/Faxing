@@ -1,22 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { Pool } from 'pg'
-
-const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL || process.env.POSTGRES_PRISMA_URL
-const pool = databaseUrl
-  ? new Pool({ connectionString: databaseUrl, max: 2, connectionTimeoutMillis: 10000, idleTimeoutMillis: 10000, ssl: { rejectUnauthorized: false } })
-  : null
+import { isFaxepave } from './_auth'
+import { pool } from './_db'
 
 function isValidEventDate(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && Number.isFinite(new Date(value).getTime())
-}
-const sessionToken = (req: VercelRequest) => req.headers.cookie?.split(';').map(value => value.trim()).find(value => value.startsWith('faxepave_session='))?.split('=')[1]
-const isAdmin = (req: VercelRequest) => {
-  const value = sessionToken(req)
-  const expected = process.env.FAXEPAVE_PASSWORD
-  if (!value || !expected) return false
-  const crypto = require('node:crypto') as typeof import('node:crypto')
-  const token = crypto.createHmac('sha256', expected).update('faxepave-session').digest('hex')
-  return value === token
 }
 const columns = 'id, title, event_date, official, attendees, created_at'
 
@@ -28,7 +15,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const result = await pool.query(`SELECT ${columns} FROM faxing_events ORDER BY event_date DESC`)
       return res.status(200).json(result.rows)
     }
-    if ((req.method === 'PUT' || req.method === 'DELETE') && !isAdmin(req)) return res.status(401).json({ error: 'Faxepave login required' })
+    // Every write needs Faxepave. A contest reaches the chronicle by closing its room, where
+    // the server derives the titles; an open POST let anyone file an "official" event.
+    if (req.method !== 'GET' && !isFaxepave(req)) return res.status(401).json({ error: 'Faxepave login required' })
     if (req.method === 'POST') {
       const { id: eventId, title, eventDate, official, attendees } = req.body ?? {}
       if (typeof eventId !== 'string' || !eventId.trim() || typeof title !== 'string' || !Number.isFinite(Number(eventDate)) || typeof official !== 'boolean' || !Array.isArray(attendees)) return res.status(400).json({ error: 'Invalid event payload' })

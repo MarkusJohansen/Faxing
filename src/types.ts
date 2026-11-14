@@ -7,7 +7,7 @@ export type Title =
   | 'Faxeridder'
   | 'Hestemann'
 
-export type Screen = 'home' | 'create' | 'arena' | 'history' | 'event' | 'lore'
+export type Screen = 'home' | 'room' | 'history' | 'event' | 'lore'
 
 export interface Contestant {
   id: string
@@ -31,10 +31,30 @@ export interface FaxingEvent {
   password?: string
 }
 
-export interface PersistedState {
-  screen: Screen
-  contestants: Contestant[]
-  contestStartTime: number | null
-  events: FaxingEvent[]
-  activeEventId: string | null
+/** What this device may do in a room. Both can hold: the host is usually drinking too. */
+export interface RoomRole {
+  host: boolean
+  memberId: string | null
+}
+
+export interface RoomSummary {
+  code: string
+  title: string
+  official: boolean
+  startedAt: number | null
+  memberCount: number
+}
+
+/** A room as the server sees it. Titles are absent on purpose: the client derives them. */
+export interface RoomSnapshot {
+  code: string
+  title: string
+  official: boolean
+  startedAt: number | null
+  closedAt: number | null
+  eventId: string | null
+  members: Contestant[]
+  serverNow: number
+  you: RoomRole
+  token?: string
 }

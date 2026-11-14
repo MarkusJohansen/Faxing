@@ -69,11 +69,12 @@ than preferences. The full list with its reasoning is
    reports an expired contest as still open — which, in an application whose only purpose is
    enforcing a one-hour limit, is the worst failure available. This is also what makes a
    mid-contest reload correct.
-3. **Never overwrite or clear a recorded `finishedAt`.** It is the sole evidence behind a
-   crown and there is no audit trail from which its loss could be detected.
-   `markDisqualified` currently breaches this on a path the UI does not reach
-   ([D3](ARCHITECTURE.md#d3-markdisqualified-clears-a-recorded-finish)) — do not make it
-   reachable, and fix it if you are in there.
+3. **Only a room's host (or Faxepave, for an official room) may change a recorded
+   `finishedAt`.** It is the sole evidence behind a crown and there is no audit trail. The
+   participant's own `finish`/`forfeit` in `api/rooms.ts` must keep their
+   `WHERE finished_at IS NULL AND NOT disqualified` guard; host corrections (`reset`,
+   `set-time`, `disqualify`) are the only other writers
+   ([faxing-rooms](openspec/changes/faxing-rooms/)).
 4. **Keep the forfeit branch ahead of the crown branches** in `getRankedContestants()`.
    Branch order is the rule that stops a contestant who gave up from consuming a crown and
    leaving the next real finisher as a knight.
@@ -87,11 +88,10 @@ than preferences. The full list with its reasoning is
    and degrades to "nothing stored" or "write ignored". `localStorage` throws in a private
    window, on a full quota, and when a browser blocks site data, and in all three cases
    running the tournament unpersisted beats not running it.
-8. **Nothing leaves the device.** No `fetch`, no `XMLHttpRequest`, no WebSocket, no
-   analytics, no error reporter, no crash service, no font or asset host beyond the existing
-   Google Fonts request. Contestant names and finish instants are personal data about
-   identifiable people who are drinking. If you think you need a network call, you need a
-   different application.
+8. **Nothing leaves the device except to our own server.** `fetch` goes only to `/api/*` on
+   the Pi. No third-party host, analytics, error reporter or crash service, and no font or
+   asset host beyond the existing Google Fonts request. Contestant names and finish instants
+   are personal data about identifiable people who are drinking.
 9. **Guard anything that fires on a state transition.** Titles recompute on every render, so
    a condition like "a `Faxekonge` exists" is true for the rest of the hour: acting on it
    directly fires 7,200 times. Use a `useRef` recording what has already fired, in the
