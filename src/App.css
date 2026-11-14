@@ -1569,6 +1569,71 @@
   color: var(--flame-200);
 }
 
+/* ── De Regjerende (home) ─────────────────────────────── */
+.reigning-tribute {
+  margin: 0 0 1.5rem;
+  padding: 1rem;
+  background: var(--night-800);
+  border: var(--px) solid var(--ember-700);
+  box-shadow: inset var(--px) var(--px) 0 var(--night-900), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 var(--ember-500);
+}
+
+.reigning-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: 400;
+  font-size: 2rem;
+  color: var(--flame-200);
+}
+
+.reigning-origin {
+  margin: .2rem 0 .8rem;
+  font-size: .95rem;
+  color: var(--mist-200);
+}
+
+.reigning-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: .4rem;
+}
+
+/* Title, name, time: the name takes the slack so a long one wraps rather than pushing the time off a phone. */
+.reigning-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: baseline;
+  gap: .6rem;
+  padding: .5rem .7rem;
+  background: var(--ember-700);
+}
+
+.reigning-crown-title {
+  color: var(--lantern-300);
+}
+
+.reigning-name {
+  font-weight: 400;
+  color: var(--moon-50);
+  overflow-wrap: anywhere;
+}
+
+.reigning-time {
+  font-family: var(--font-num);
+  font-size: 1.4rem;
+  color: var(--flame-200);
+}
+
+@media (max-width: 480px) {
+  .reigning-row { grid-template-columns: auto 1fr auto; }
+  .reigning-crown-title { grid-column: 2; grid-row: 1; font-size: .85rem; }
+  .reigning-name { grid-column: 2; grid-row: 2; }
+  .reigning-time { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+  .reigning-row .royal-crown { grid-row: 1 / span 2; align-self: center; }
+}
+
 /* ── Faxepave's tools ─────────────────────────────────── */
 .event-admin-toolbar {
   display: flex;

@@ -1,4 +1,5 @@
 import type { FaxingEvent } from '../types'
+import { formatDate } from '../lib/format'
 
 interface HistoryProps {
   events: FaxingEvent[]
@@ -7,7 +8,6 @@ interface HistoryProps {
   isAdmin?: boolean
 }
 
-const formatDate = (date: number) => new Intl.DateTimeFormat('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' }).format(date)
 const yearOf = (date: number) => new Date(date).getFullYear()
 
 export default function History({ events, onOpen, onCreate, isAdmin = false }: HistoryProps) {
