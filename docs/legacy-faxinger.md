@@ -17,7 +17,8 @@ new result: a time, a name or a title comes from the message, or it is left empt
 ## 18 September 2026 — Faxetidene fra Fredagen (official)
 
 Posted by Gleb Rychkov (Discord). The text carries no date of its own: it says the times are
-from "fredagen", and 18 September 2026 is a Friday.
+from "fredagen", and 18 September 2026 is a Friday, so the session ran on Friday 18 September
+2026.
 
 ```
 Vær hilset mine faxeundersåtter :faxe-kongelig:
@@ -139,6 +140,9 @@ Andrej (er klart det suger)
 no crown, no knighthood, and no invented `Faxeridder`. Andrej is a `Hestemann`; the aside "(er
 klart det suger)" is kept here and not in his name.
 
+The list gives `34:55 Ouren`, by surname only. The organizer supplied the full name, so the
+fixture stores `Magnus Ouren`; this file keeps what was posted.
+
 Jennings' time is `0:56,66`. The chronicle stores 56 660 ms and the table shows `0:56`, because
 the archive displays whole seconds. The hundredths are in the record and in the fixture.
 
@@ -225,12 +229,14 @@ kept here and not in his name.
   flow does.
 - **Names.** Verbatim, including `Sofie venninna til Eline`, `Halvis (kvartvar)`, `Magnus byrkj`,
   `Ådne svendsrrud`, `Sivert vårum` and `Kristian numme`. A nickname is what the record says;
-  correcting one would make the fixture disagree with this file.
-- **Gender.** The messages never state one. The fixture stores the gender a reader would infer
-  from the name, because the record's shape requires a value; `Ouren`, `Halvis (kvartvar)`,
-  `Sepanta Ganjei`, `Sopika Visvalingam` and `Kirisan Premakanth` are filed as `other` because
-  the name does not settle it. No imported title depends on this: every title above is
-  transcribed.
+  correcting one would make the fixture disagree with this file. The one exception is `Ouren`,
+  which was written by surname only: the organizer supplied Magnus Ouren, and the fixture stores
+  the full name.
+- **Gender.** The messages never state one, and a name does not settle it. The fixture stores the
+  gender the organizer supplied instead of one read off the list: Kvartvar (written
+  `Halvis (kvartvar)`, the parenthesis is his first name), Magnus Ouren, Sepanta Ganjei and
+  Kirisan Premakanth are male; Sopika Visvalingam is female. No imported title depends on this:
+  every title above is transcribed.
 - **Order.** The contestant order is the record's order, including the Hestemenn after the
   finishers. The archive keeps that order whenever a finisher has no duration.
 

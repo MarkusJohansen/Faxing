@@ -6,9 +6,14 @@ original messages, and `scripts/history/legacy-events.json` with the same result
 the seeder.
 
 An encoded event SHALL carry a stable id, a title, a date, an `official` flag, and its
-contestants in recorded order. A contestant SHALL carry the name exactly as the record wrote it,
-a gender, the title the record awards (or none), and the elapsed time the record states (or
-none). Times SHALL keep the precision the record gives, including hundredths of a second.
+contestants in recorded order. A contestant SHALL carry the name as the record wrote it, a
+gender, the title the record awards (or none), and the elapsed time the record states (or none).
+Times SHALL keep the precision the record gives, including hundredths of a second.
+
+A name SHALL be stored exactly as written, except where the organizer has since supplied the full
+name of an entry the record gave only a surname. That full name SHALL be stored, and the message
+in `docs/legacy-faxinger.md` SHALL keep the short form, so the correction can be seen against the
+source.
 
 #### Scenario: A nickname survives transcription
 - **WHEN** the 10 September 2025 record lists "Sofie venninna til Eline" and "Halvis (kvartvar)"
@@ -19,9 +24,16 @@ none). Times SHALL keep the precision the record gives, including hundredths of 
 - **THEN** the encoded contestant's duration is 56660 ms, and the archive still shows it as
   `0:56`
 
+#### Scenario: A name the organizer completed
+- **WHEN** the 10 September 2025 record lists "34:55 Ouren" and the organizer supplies
+  "Magnus Ouren"
+- **THEN** the encoded name is "Magnus Ouren", and the message in `docs/legacy-faxinger.md` still
+  reads "Ouren"
+
 #### Scenario: The record can be audited against its source
 - **WHEN** a reader compares an encoded event with the message in `docs/legacy-faxinger.md`
-- **THEN** every name, place, time and stated title can be found in that message
+- **THEN** every place, time and stated title can be found in that message, and every name either
+  appears there or is a name the file records as completed by the organizer
 
 ### Requirement: Seeding is additive and repeatable
 `npm run seed:history` SHALL validate the whole record before writing anything, then insert the

@@ -55,10 +55,17 @@ available, so the view keeps it whenever a finisher has no duration. That also m
 kronprins stays second, where the record puts him, instead of sinking to the bottom of the
 table.
 
-### Gender is inferred, and no title depends on it
+### Gender comes from the organizer, and no title depends on it
 
-The old messages never state a gender. The fixture records the gender a reader would infer from
-the name, because the archive's shape requires one; names that could be read either way are
-filed as `other`. This is metadata only: every imported title is transcribed, so no imported
-crown is decided by an inferred gender, and the inference is repeated in
-`docs/legacy-faxinger.md` where the reader can disagree with it.
+The old messages never state a gender, and a name does not settle one. Rather than read a gender
+off a name, the fixture stores the one the organizer gave: Kvartvar (`Halvis (kvartvar)`, where
+the parenthesis is his first name), Magnus Ouren, Sepanta Ganjei and Kirisan Premakanth are male,
+and Sopika Visvalingam is female. This is metadata only: every imported title is transcribed, so
+no imported crown is decided by a gender.
+
+### One name is completed, not invented
+
+The 10 September 2025 list gives "Ouren" by surname. The organizer supplied Magnus Ouren, so the
+fixture stores the full name while the message in `docs/legacy-faxinger.md` keeps what was
+posted. Every other name is the record's, nicknames and typos included; nothing else is
+corrected.
