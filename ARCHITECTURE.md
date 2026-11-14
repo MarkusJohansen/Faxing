@@ -1,554 +1,430 @@
 # Architecture
 
-How Faxing works. Read [README.md](README.md) first for what it is and how to run a
-tournament; read [CLAUDE.md](CLAUDE.md) for the working conventions.
+How Faxing works, and why it is shaped the way it is. Read [README.md](README.md) first for
+what it is and how to run it. Read [CLAUDE.md](CLAUDE.md) for the rules you must not break.
 
-This document is in English while the interface is in archaic Danish. That is deliberate:
-the Danish is the product's voice and the titles are domain terms with no English
-equivalent, but a document whose job is to stop somebody breaking the titling rules should
-be precise before it is charming. Danish terms are used as domain vocabulary throughout and
-are glossed in [Vocabulary](#12-vocabulary).
+Every claim here points at code (`file:line`), a test, or a measurement. Where a choice is a
+judgement rather than a verified fact, the text says so.
 
 ## Contents
 
-1. [The shape of the system](#1-the-shape-of-the-system)
-2. [State, and who owns it](#2-state-and-who-owns-it)
-3. [The derivation chain](#3-the-derivation-chain)
-4. [The titling rules](#4-the-titling-rules)
-5. [The tick](#5-the-tick)
-6. [Persistence](#6-persistence)
-7. [The component tree](#7-the-component-tree)
-8. [The visual layer](#8-the-visual-layer)
-9. [Invariants](#9-invariants)
-10. [Known defects](#10-known-defects)
-11. [What is deliberately absent](#11-what-is-deliberately-absent)
-12. [Vocabulary](#12-vocabulary)
-13. [Where the next change attaches](#13-where-the-next-change-attaches)
+| | |
+| --- | --- |
+| [1. The shape of the system](#1-the-shape-of-the-system) | two runtime modes, the processes, what lives where |
+| [2. Client state](#2-client-state) | what `App.tsx` owns, and what is derived |
+| [3. Titles](#3-titles) | the one pure function that decides every title |
+| [4. A shared room](#4-a-shared-room) | the rooms API: who may do what, and why the server stamps time |
+| [5. The chronicle](#5-the-chronicle) | how a closed room becomes history, and where titles get stored |
+| [6. Persistence and the database](#6-persistence-and-the-database) | the three tables, the migration, what is local to a device |
+| [7. Deployment](#7-deployment) | Docker, the Raspberry Pi, the deploy workflow |
+| [8. The visual layer](#8-the-visual-layer) | how the livery is built, and what the stylesheet is coupled to |
+| [9. Invariants](#9-invariants) | the properties that must hold, and what enforces each |
+| [10. Known defects](#10-known-defects) | what is wrong today, and what was fixed since the last revision |
+| [11. Known constraints](#11-known-constraints) | where the system is binding, and the statistics it cannot support |
+| [12. What is deliberately absent](#12-what-is-deliberately-absent) | ideas that were considered and rejected, and why |
+| [13. Where the next change attaches](#13-where-the-next-change-attaches) | the seam for each kind of work |
+
+---
 
 ## 1. The shape of the system
 
-Faxing is a single-page React application with no backend, no build-time data, no network
-calls after its own assets have loaded, and two runtime dependencies. It is about 700 lines
-of TypeScript and CSS.
+Faxing is a React single-page app with a small Node API beside it. It runs in two modes that
+share the same code.
+
+**Production (the Pi):** one Node process, `server/index.ts`, bundled to `server.cjs` by
+esbuild (`package.json` `build:server`). It serves the built SPA from `dist/`, mounts the
+handlers in `api/` through an adapter (`server/api.ts`), and answers `/healthz`
+(`server/index.ts:39`). It talks to one Postgres 17 container.
+
+**Development:** `vite` on `0.0.0.0:5173` (`vite.config.ts`). A small Vite plugin,
+`localApi()`, mounts the same `api/` handlers through the same adapter, so dev and production
+cannot serve different APIs. The plugin also copies `DATABASE_URL` and `FAXEPAVE_PASSWORD`
+from `.env*` into `process.env` before the handlers load (`vite.config.ts`).
 
 ```
-index.html
-  └── src/main.tsx            mounts <App /> in StrictMode
-      └── src/App.tsx         ALL tournament state; the titling rules; the tick
-          ├── src/lib/storage.ts        localStorage read/write/clear
-          ├── src/types.ts              Contestant, RankedContestant, Title, Gender, Screen
-          ├── components/Registration.tsx   screen === 'home'
-          └── components/Arena.tsx          screen === 'arena'
-              ├── components/GlobalTimer.tsx
-              └── components/ContestantCard.tsx   (×N)
+browser (phone or laptop)
+  │  SPA from dist/ ── polls /api/rooms every 2 s
+  │
+  ▼
+server.cjs  (Node 22, one process)
+  ├── static files        dist/, index.html fallback for unknown paths
+  ├── /healthz            "ok"
+  └── /api/*  ── api/*.ts handlers, via server/api.ts
+        ├── /api/rooms     live rooms, the only write path during a contest
+        ├── /api/events    the chronicle (closed contests), Faxepave writes only
+        └── /api/admin     Faxepave login: sets an HMAC session cookie
+              │
+              ▼
+        Postgres 17  (faxing_rooms, faxing_room_members, faxing_events)
 ```
 
-There are two screens and one switch between them, held in `App.tsx`. There is no router:
-the URL never changes, which is a deliberate consequence of the tournament living in
-`localStorage` rather than in a shareable address. See
-[§11](#11-what-is-deliberately-absent).
+| Piece | Where | Why it exists |
+| --- | --- | --- |
+| SPA | `src/` | The screen the room looks at. Everything the operator sees is computed here, from server snapshots. |
+| API handlers | `api/*.ts` | Written as Vercel-style `(req, res)` handlers (they import `@vercel/node` types). The Pi is the only deployment this repo configures. |
+| Adapter | `server/api.ts` | Reads the body, builds `query`, and maps `HttpError` to status codes. One adapter means dev and prod share one API. |
+| Ranking | `src/lib/ranking.ts` | Pure, and imported by **both** the client and `api/rooms.ts`. The server derives titles with the same code the client shows, so the two cannot disagree. |
+| Constants | `src/lib/contest.ts` | `CONTEST_DURATION_MS`, declared once so client and server agree on the hour. |
 
-The whole application is a projection of **three** pieces of state and **one** clock
-reading. Everything else — every title, every rank, every duration, every group on the
-board — is derived on each render. That is the central design decision and the rest of this
-document is mostly its consequences.
+The SPA has no router. The room code lives in the URL query (`?rom=CODE`,
+`src/App.tsx:21-23`), so a reload or a link sent round the table lands in the same room.
 
-## 2. State, and who owns it
+## 2. Client state
 
-`App.tsx` owns all tournament state. There is no context, no store, no reducer.
+`src/App.tsx` holds the screen state. There is no context, store or reducer.
 
-```ts
-const [screen, setScreen]                     = useState<Screen>(...)             // 'home' | 'arena'
-const [contestants, setContestants]           = useState<Contestant[]>(...)       // the roster
-const [contestStartTime, setContestStartTime] = useState<number | null>(...)      // epoch ms, or null
-const [now, setNow]                           = useState<number>(Date.now())      // the clock reading
-```
+| State | Where | What it is |
+| --- | --- | --- |
+| `roomCode` | `src/App.tsx:26` | The room in view. Null on the home and archive screens. |
+| `screen` | `src/App.tsx:27` | `home`, `room`, `history`, `event`, or `lore`. |
+| `events` | `src/App.tsx:28` | The chronicle, loaded from `/api/events`. |
+| `now` | `src/App.tsx:30` | The local clock. Re-read every 500 ms (`src/App.tsx:37`). |
+| `isAdmin` | `src/App.tsx:31` | Whether this device holds a Faxepave cookie. |
+| `room` | `useRoom` in `src/lib/rooms.ts:73` | The server snapshot, polled every 2 s (`src/lib/rooms.ts:9`, `:98`). |
 
-`Contestant` is the only stored record, and it holds facts rather than conclusions:
+**The clock is the server's, not the phone's.** Each snapshot carries `serverNow`. `useRoom`
+keeps `offset = serverNow - Date.now()` (`src/lib/rooms.ts:87`), and `src/App.tsx:54` computes `roomNow =
+now + offset`. A phone with a wrong clock therefore shows the same remaining time as every
+other phone in the room.
 
-```ts
-interface Contestant {
-  id: string              // crypto.randomUUID()
-  name: string            // trimmed at entry, unique case-insensitively
-  gender: Gender          // 'male' | 'female' — input to the crown rules
-  finishedAt: number | null   // epoch ms, or null if not finished
-  disqualified: boolean       // gave up
-}
-```
+**Derived, never stored, on the client.** Every rank, title, group and duration is recomputed
+on each render from `room.startedAt`, `roomNow`, and `room.members` (`src/App.tsx:55`). Nothing
+on the client is a second source of truth.
 
-**No title is stored anywhere.** `RankedContestant` — which adds `title` and `elapsed` — is
-constructed fresh on every render and never written back. This is what makes the titling
-rules auditable: there is one function to read, and it is impossible for a stored title to
-disagree with the finish instants that should have produced it.
+## 3. Titles
 
-The five mutators in `App.tsx` are the entire write surface: `addContestant`,
-`removeContestant`, `markFinished`, `markDisqualified`, `resetContest`, plus `startContest`
-which sets the start instant. Every one is a `useCallback` over `setContestants(prev => …)`.
-Nothing else in the tree writes state, with one exception: `Arena` holds two pieces of
-purely local view state (the search query, and whether the reset confirmation is showing),
-neither of which is persisted or observable from outside.
+`rankContestants()` in `src/lib/ranking.ts:10` is the only place a title is decided. It is
+pure, takes the roster, the start instant, `now` and the duration, and returns ranked
+contestants. It is called on the client for display (`src/App.tsx:55`) and on the server when a
+room closes (`api/rooms.ts:197`).
 
-Child components receive data and callbacks. They compute presentation and nothing else.
+The five titles are defined in `src/types.ts`:
 
-## 3. The derivation chain
+| Title | Awarded when | Why it exists |
+| --- | --- | --- |
+| Faxekonge | first `male` finisher within the hour | one crown per gender |
+| Faxedronning | first `female` finisher within the hour | one crown per gender |
+| Faxemonark | first `other` finisher within the hour | the third crown, for the `Annet` option |
+| Faxeridder | any other finisher within the hour | the reward for finishing |
+| Hestemann | forfeited, finished late, or unfinished at expiry | the consequence, and the only title for failure |
 
-Every duration in the system comes from subtracting two absolute instants. Nothing
-accumulates.
+The rule has three parts, and each is worth knowing before editing `ranking.ts`:
 
-```
-contestStartTime  (fixed once, at startContest)
-now               (re-read every 500 ms)
-        │
-        ├── elapsedMs   = now - contestStartTime
-        ├── remainingMs = CONTEST_DURATION_MS - elapsedMs
-        ├── contestOver = elapsedMs >= CONTEST_DURATION_MS
-        │
-        └── per contestant:
-              elapsed = (finishedAt ?? now) - contestStartTime
-              title   = f(disqualified, finishedAt, gender, elapsed, crowns already given)
-```
+**Finish time decides precedence, not tap order.** The sort (`src/lib/ranking.ts:16`) orders in-time
+finishers by `finishedAt`. Anyone who crosses a room and taps the nearer card first does not
+take a crown from the person who finished earlier.
 
-`CONTEST_DURATION_MS` is `60 * 60 * 1000`, declared once in `App.tsx`.
+**"Within the hour" is strict.** `finishedInTime` (`src/lib/ranking.ts:14`) requires
+`finishedAt - start < durationMs`. A finish at or after the deadline is not a finish. Before
+this was enforced, a tap after the hour could promote a `Hestemann` to a knight or award a
+vacant crown; `check:rules` now asserts that it cannot.
 
-The consequence of deriving rather than accumulating is that **the clock keeps running while
-nothing is watching**: closed tab, backgrounded app, sleeping laptop. An hour of wall-clock
-time is an hour of contest. A counter incremented on an interval would silently stop in
-every one of those cases and report a contest as still open after it had expired — which,
-for an application whose entire purpose is enforcing a one-hour limit, is the worst
-available failure. This is also what lets a reload restore a contest mid-flight
-([§6](#6-persistence)) with the clock at the right place rather than at the place it was
-interrupted.
+**The failure branch comes first.** The `if` at `src/lib/ranking.ts:29` tests `disqualified`, a late
+finish and expiry before any crown branch. A contestant who gave up does not consume a
+crown and leave the next real finisher as a knight. Branch order is the rule.
 
-`elapsed` for a contestant who has not finished is `now - contestStartTime` — that is, the
-global elapsed time, identical for everybody. This is correct and is the source of a
-misleading piece of UI; see [D2](#d2-the-per-card-gauge-is-the-global-clock).
+**No title is ever a stored input.** The crowns are re-claimed inside each call (the `king`,
+`queen`, `monarch` flags are local, `src/lib/ranking.ts:15-17`), so the function is a projection of
+the facts. The one exception is the chronicle, which freezes titles at close; see
+[§5](#5-the-chronicle).
 
-## 4. The titling rules
+`src/lib/ranking.demo.ts` is the only test. `npm run check:rules` runs seven assertions under
+Node, and each names the silent failure it guards. Last run: all seven passed.
 
-`getRankedContestants()` in `App.tsx` is the only place a title is decided. It runs on every
-render.
+## 4. A shared room
+
+A room is one contest that many phones join. This is the path a contest takes in production.
 
 ```
-1. If there is no start instant, return everybody with title = null.
-2. Sort a copy of the roster:
-     both finished        → ascending finishedAt
-     one finished         → the finisher first
-     neither finished     → 0  (stable sort ⇒ enlistment order preserved)
-3. Walk the sorted list, carrying two booleans — faxekongeAwarded, faxedronningAwarded:
-     disqualified            → Hestemann
-     finished, male, no king → Faxekonge   (claim it)
-     finished, female, no q. → Faxedronning (claim it)
-     finished                → Faxeridder
-     out of time             → Hestemann
-     otherwise               → null
+create ─► lobby ─► start ─► running ─► close ─► chronicle
+(anyone)  (join,   (host,   (finish,   (host;    (faxing_events row,
+           add)     ≥1 member) forfeit,   titles    room.event_id set,
+                              host fixes) frozen)   clients redirected)
 ```
 
-Three properties are worth naming because each is load-bearing and none is obvious:
+### Who may do what
 
-**Precedence is decided by `finishedAt`, not by tap order.** The sort runs before the walk,
-so an operator who crosses a room and taps the nearer card first does not thereby award the
-crown to the wrong person. The recorded instants are the evidence.
+Every write goes through `POST /api/rooms` with an `action` field. The router is one handler,
+`api/rooms.ts`, so the permission checks live in one place. `act()` (`api/rooms.ts:107`)
+applies the action under a row lock (`FOR UPDATE`, `api/rooms.ts:228`), so two taps in the
+same room apply one after another rather than interleaving.
 
-**A forfeit is checked first, so it never consumes a crown.** `disqualified` short-circuits
-before the crown branches, which means a contestant who gave up does not claim
-`Faxekonge` and leave the next finisher as a knight. It matters: the branch order *is* the
-rule.
+| Action | Who | Condition | Effect |
+| --- | --- | --- | --- |
+| `create` | anyone | `official` requires Faxepave (`:93`) | new room, host token returned once |
+| `join` | anyone, one per device | before start (`:125`) | new member row, participant token returned |
+| `finish` / `forfeit` | the participant, for themselves only | running (`:135`) | sets `finished_at` or `disqualified`, guarded by `WHERE finished_at IS NULL AND NOT disqualified` (`:138`) |
+| `start` | host | at least one member (`:146`) | sets `started_at` |
+| `add` | host | before or after start | new member row, no token |
+| `remove` | host | **before start only** (`:157`) | deletes a row |
+| `reset` | host | any time | clears `finished_at` and `disqualified` for one member |
+| `set-finished` | host | running (`:172`) | stamps a finish at the server's now |
+| `set-time` | host | `0 ≤ elapsed < hour` (`:180`) | stamps a finish at a typed time |
+| `disqualify` | host | after start | sets `disqualified`, **clears `finished_at`** (`:187`) |
+| `close` | host | after start | derives titles, writes the chronicle, closes the room (`:190-201`) |
 
-**The two crown flags are function-local.** They are re-initialised on every call, so the
-crowns are recomputed from scratch on every render rather than latched. This is what makes
-the function a pure projection of state — and also why an acclamation on a crowning needs
-its own guard against firing repeatedly (see
-[§13](#13-where-the-next-change-attaches)).
+A "host" is a device holding the host token, **or** a Faxepave session on an official room
+(`api/rooms.ts:60`). A member is a device holding a participant token. A device can hold both,
+because the host is usually drinking too; the header carries up to two tokens
+(`api/_auth.ts:23-26`).
 
-The rules are specified independently of this implementation in
-[`openspec/specs/title-award/spec.md`](openspec/specs/title-award/spec.md). Where the two
-disagree, the spec is right and the code has a defect — there is one, recorded as
-[D1](#d1-a-finish-recorded-after-the-hour-earns-a-title).
+### Why the server stamps every instant
 
-## 5. The tick
+`start`, `finish` and `set-finished` use `Date.now()` on the server (`api/rooms.ts:230`), not
+the phone's clock. A phone that is wrong, or sleeping, cannot move a finish. The clients
+compare against `serverNow` (see [§2](#2-client-state)). The cost is that the finish is
+recorded when the request reaches the Pi, not when the can is empty; over a home network that
+is a small delay, and it is the same delay for everyone.
 
-```ts
-useEffect(() => {
-  const interval = setInterval(() => setNow(Date.now()), 500)
-  return () => clearInterval(interval)
-}, [])
-```
+### Why polling, not WebSockets
 
-One interval, mounted once, cleared on unmount. It is the only timer in the application.
+`POLL_MS = 2000` (`src/lib/rooms.ts:9`). Each poll is one indexed read. The comment at
+`src/lib/rooms.ts:7-8` works the numbers: twenty phones at one request every two seconds is ten
+requests a second, which the Pi serves without effort. A WebSocket would add a dependency and
+a connection to keep alive for an hour-long party. *Measured?* No. The 10 req/s figure is
+arithmetic; the Pi load has not been measured under real use.
 
-**500 ms rather than 1000 ms** because a one-second interval drifts against the second
-boundary and the displayed seconds digit visibly skips a value — which, on a clock a room
-full of people is watching, reads as a broken clock. Sampling twice as fast as the finest
-displayed unit is the cheapest fix.
+### Why members are rows, not an array
 
-**What the tick costs.** Every tick re-renders `App`, which re-runs `getRankedContestants()`
-— a copy, a sort and a map over the roster — and re-renders `Arena`, `GlobalTimer` and every
-`ContestantCard`. That is 7,200 renders an hour. At party scale (tens of contestants) this
-is free; the sort is over a handful of items and React's reconciliation touches a few dozen
-nodes. It is worth knowing about because it constrains what may be computed per render:
+`faxing_room_members` holds one row per participant (`server/api.ts:73`). A jsonb array on the
+room would be read-modify-write: two people finishing in the same second would overwrite each
+other. The row lock serialises actions in a room, but rows also keep each finish independent.
 
-- Anything derived per render must be **deterministic**, or it will visibly change twice a
-  second. A random value would make the board tremble.
-- Anything expensive per render is paid 7,200 times.
-- Anything that *fires* per render — an animation, a notification, a write — needs a guard
-  against firing on every tick, not merely a condition that happens to be true once.
+### Why tokens, not accounts
 
-`Arena` memoises the search filter with `useMemo`, which is the one place memoisation is
-present. It is not obviously necessary at this scale; it is also not wrong.
+The room's creator gets a random 32-byte host token (`api/_auth.ts:18`). The database stores
+only its SHA-256 hash (`:20`), so a leaked row cannot be replayed as a host. The client keeps
+its tokens in `localStorage` under `faxing-room-tokens` (`src/lib/rooms.ts:10`), keyed by room
+code. Losing the token means losing the role, not the contest: the state lives on the server.
 
-## 6. Persistence
+## 5. The chronicle
 
-`src/lib/storage.ts` is 30 lines and the entire persistence layer.
+`close` (`api/rooms.ts:190`) is the only place a title is written to the database.
 
-```ts
-const KEY = 'faxing-state-v1'
+1. It ranks the members with `rankContestants`, using `now = max(now, start + hour)`
+   (`api/rooms.ts:197`). Closing early therefore ranks as if the hour had run out: anybody
+   still drinking becomes a `Hestemann`.
+2. It inserts a `faxing_events` row whose `attendees` is the ranked list, **titles included**
+   (`:199`).
+3. It sets `closed_at` and `event_id` on the room (`:200`). Every other device sees `eventId`
+   on its next poll and moves to the archived event (`src/App.tsx:43-51`).
 
-interface PersistedState {
-  screen: Screen
-  contestants: Contestant[]
-  contestStartTime: number | null
-}
-```
+This is a deliberate exception to "titles are derived". Once a contest is closed the chronicle
+is the record, and a record that re-derived its titles would change if the rule ever changed.
+The cost is that the chronicle is editable: `PUT /api/events` accepts `attendees` verbatim
+(`api/events.ts:30-31`), so a Faxepave session can set any title on a closed event. That is
+the intended power of the operator, and it is also the only place a title can be set by hand.
 
-**Written** by an effect in `App.tsx` on every change to those three values. There is no
-debounce: writes are driven by an operator's finger, not by the clock, and `now` is
-deliberately absent from the dependency array — it derives from `contestStartTime` and holds
-nothing worth saving. Adding `now` there would turn a handful of writes an hour into 7,200.
+## 6. Persistence and the database
 
-**Read** by three lazy `useState` initialisers, so the restore happens *before the first
-render*. This is what prevents the enlistment screen appearing for one frame in front of a
-contest already under way. (It also means `loadState()` runs three times on mount — see
-[D6](#d6-loadstate-runs-three-times-on-mount).)
+The schema is created on every start by `migrate()` (`server/api.ts:47-85`). Every statement
+is `IF NOT EXISTS`, so it is idempotent.
 
-**Failure is swallowed by design.** Both `loadState` and `saveState` wrap their access in
-`try`/`catch`; a failed read is treated as nothing stored and a failed write is ignored.
-`localStorage` throws rather than returning an error in several ordinary situations — a
-private window, a full quota, a browser set to block site data — and in every one of them
-running the tournament without persistence is strictly better than not running it. The
-operator is not told, because there is nothing they can do about it mid-contest.
+| Table | Holds | Why it exists |
+| --- | --- | --- |
+| `faxing_events` | the chronicle: title, date, `official`, `attendees` (jsonb) | one row per closed contest, or per event entered by hand |
+| `faxing_rooms` | code (unique), title, `official`, host-token hash, `started_at`, `closed_at`, `event_id` | a live contest, until it closes |
+| `faxing_room_members` | name, gender, `finished_at`, `disqualified`, token hash | one row per participant, so writes never collide |
 
-**The key is versioned** so a future change to the shape need not read an older one. Bumping
-`-v1` discards old tournaments, which is acceptable — a tournament is an hour long — and is
-preferable to migration code for a structure this small.
+Two constraints do real work:
 
-**No title is persisted.** Titles derive ([§4](#4-the-titling-rules)); persisting them would
-create a second source of truth that could disagree with the finish instants.
+- **`UNIQUE (room_id, lower(name))`** (`server/api.ts:83`). This is the duplicate-name check, so
+  two people typing the same name in the same second cannot both get in. The `23505` error is
+  turned into a 409 at `api/rooms.ts:53`.
+- **`ON DELETE CASCADE`** on members (`server/api.ts:75`). Deleting a room removes its members.
 
-The consequence of all this is that a tournament lives on exactly one device and one browser
-profile. Moving to another device is starting a new tournament. That is not a limitation
-being worked around — it is the architecture, and it is why nothing leaves the machine.
+**What lives on the device:** only the room tokens (`localStorage`, `src/lib/rooms.ts:10`), the
+Faxepave cookie (HttpOnly, set by `api/admin.ts:9`), and the React state. A contest is not
+stored on the phone. If the browser loses its storage, the room is still there; the device
+simply stops being the host.
 
-## 7. The component tree
+**Pool size.** `pg` is capped at four connections in the app (`api/_db.ts:6`) and one during
+migration (`server/api.ts:50`). The Pi's Postgres is set to 20 (`deploy/compose.yml`). These
+are configuration values; they have not been tuned against load.
 
-**`Registration.tsx`** — the enlistment screen. Holds the name field, the gender toggle and
-the validation message as local state. Validation is three rules, all in `handleAdd`: trim,
-reject empty, reject a case-insensitive duplicate. The 30-character cap is `maxLength` on
-the input and is *not* re-checked in the handler, so it is a UI affordance rather than an
-enforced invariant. The start control is genuinely `disabled` when the roster is empty, not
-merely styled so.
+## 7. Deployment
 
-**`Arena.tsx`** — the live board. Receives the already-ranked list and partitions it into
-three groups:
+The production image is built and run by three files:
 
-```ts
-finished = filtered.filter(c => c.finishedAt)
-active   = filtered.filter(c => !c.finishedAt && !c.disqualified && !contestOver)
-failed   = filtered.filter(c => c.disqualified || (!c.finishedAt && contestOver))
-```
+| File | What it does |
+| --- | --- |
+| `Dockerfile` | two stages: `npm ci` and `npm run build`, then a Node 22 Alpine runtime with `dist/` and `server.cjs` only. Runs as the `node` user. Health check on `/healthz`. |
+| `.github/workflows/deploy.yml` | on every push to `main`: build an arm64 image, push it to GHCR as `:main` and `:<sha>`, then ssh to the Pi and run `pi-deploy faxing`. |
+| `deploy/compose.yml` | a reference copy of the Pi's compose file: the app on `127.0.0.1:4010`, Postgres beside it. Both capped at 0.3 CPU and 128 MB. |
 
-The `!contestOver` term in `active` is what moves every straggler into `failed` the moment
-the hour expires — the transition costs nothing and is not an event. An empty group renders
-nothing at all, not an empty heading.
+The compose file's comment is the one thing to read before editing the database URL: the
+local database has no TLS, so `sslmode=disable` overrides the `ssl` option in `api/_db.ts:6`.
+Without it, the connection fails.
 
-The search bar appears only at five or more contestants, because it costs a permanent strip
-of screen on a board scrolled with a thumb and below five cards the operator finds the name
-faster by looking. Filtering affects only which cards render: ranks and titles are computed
-over the whole roster in `App.tsx`, so a filtered board never renumbers.
+The deploy key can run only `/usr/local/bin/pi-deploy <app>` on the Pi (`deploy.yml` header
+comment). That is the whole deployment surface.
 
-Reset is the one confirmed action on the board. Finish and forfeit are not, deliberately:
-they are pressed in a crowd at arm's length, a confirmation step is a second thing to hit,
-and a missed finish loses the instant that decides a crown. Reset is confirmed because it is
-the only irreversible one.
-
-**`GlobalTimer.tsx`** — pure presentation. Formats `m:ss`, extending to `h:mm:ss` only while
-an hour or more remains, clamps negatives to zero and progress to 100%, and carries two
-states: urgent under five minutes remaining, and over at expiry. The two are mutually
-exclusive — `urgent` requires `!contestOver` — because a clock that was both would be asking
-for action that is no longer possible.
-
-**`ContestantCard.tsx`** — pure presentation. `TITLE_META` maps each title to an emblem, a
-colour class and a label; it is the only place the four titles are given visual identity.
-`formatElapsed` renders a fixed `mm:ss` for a finisher, computed from the stored instants, so
-a finishing time does not continue to advance. `BeerProgress` renders the progress bar — see
-[D2](#d2-the-per-card-gauge-is-the-global-clock).
+**Not verified here:** the deploy workflow itself, the Pi, and the compose file's live state.
+This revision read the files; it did not run the pipeline.
 
 ## 8. The visual layer
 
-There is no CSS framework, no preprocessor, no CSS-in-JS and no design-token build step.
-`src/index.css` holds a reset, a token block of custom properties, and the `body` ground;
-`src/App.css` holds every component rule, about 650 lines, keyed on class names the
-components emit. Fonts are four families from Google Fonts, requested in `index.html`.
+The livery is a moonlit, pixel-art night: a header scene, torches and a graveyard footer
+(`src/App.tsx:2-4`, `src/components/NightScene.tsx`, `Torch.tsx`, `GraveScene.tsx`). The pixel-art
+helpers are `src/lib/pixelArt.ts` and `src/lib/pixelInk.tsx`; their internals were not read for
+this revision.
 
-The token block is the seam that makes the visual layer replaceable: every colour in
-`App.css` resolves through a custom property, so re-liveried is twenty-two declarations plus
-the rules that need new *structure*. That is the assumption
-[`restyle-order-livery`](openspec/changes/restyle-order-livery/) is built on.
+The stylesheet is `src/App.css` for component rules and `src/index.css` for the reset and
+the colour tokens. The intent (recorded in `CLAUDE.md`) is that every colour in `App.css`
+resolves through a custom property defined in `index.css`, so that a restyle changes the token
+block and not every rule. A search for hex literals in `.tsx` files found none; the same
+check on `App.css` was not re-run for this revision.
 
-The current livery is Faxe brewery livery — a warm brown ground, a gold ramp, two radial
-washes, a diamond tile, and the byline `Faxe Bryggeri · Grundlagt 1901 · Danmark` — and is
-being replaced; see that change's [proposal](openspec/changes/restyle-order-livery/proposal.md)
-for why.
-
-Two facts about the current stylesheet are worth knowing before editing it: `MedievalSharp`
-is requested in `index.html` and referenced by no rule, and `Cinzel Decorative` carries only
-the wordmark.
+Two open changes describe the visual direction. `moonlit-gothic-livery` is the implemented
+night scene, 19 of 23 tasks done. `restyle-order-livery` (0 of 66 tasks) is a different
+palette written before the night scene; its status relative to the implemented livery is an
+open question for the author (see [§13](#13-where-the-next-change-attaches)).
 
 ## 9. Invariants
 
-These hold today. Most of them fail *silently* when broken, which is why they are written
-down rather than left to be inferred.
+These hold in the code today. Most fail **silently** when broken, which is why they are written
+down. "Enforced by" names what would catch a break.
 
-1. **No title is ever stored.** Titles are computed in `getRankedContestants()` and nowhere
-   else. A stored title is a second source of truth that will eventually disagree with the
-   finish instants.
-2. **All durations derive from two absolute instants.** Nothing accumulates elapsed time. A
-   counter would stop when the tab is backgrounded and report an expired contest as open.
-3. **`contestStartTime` is written once per contest** — at `startContest`, and cleared at
-   `resetContest`. Recomputing it would silently reset every contestant's elapsed time.
-4. **A recorded `finishedAt` is never overwritten or cleared.** It is the sole evidence
-   behind a crown and there is no audit trail from which its loss could be detected. The
-   card's controls disappear once a contestant is resolved, which is the guard.
-   ([D3](#d3-markdisqualified-clears-a-recorded-finish) is a latent breach.)
-5. **The forfeit branch precedes the crown branches.** Branch order is the rule that stops a
-   contestant who gave up from consuming a crown.
-6. **Ranks and titles are computed over the whole roster, never over the filtered view.** A
-   rank that renumbered under a search would report second place as the winner.
-7. **`now` is not in the persistence effect's dependency array.** Putting it there turns a
-   handful of writes an hour into 7,200.
-8. **Storage access never throws out of `storage.ts`.** Every entry point catches. The
-   tournament must run in a private window.
-9. **Nothing leaves the device.** No `fetch`, no `XMLHttpRequest`, no WebSocket, no
-   analytics, no error reporter. The only network traffic is the app's own assets and the
-   Google Fonts request. Contestant names and finish instants are ordinary personal data
-   about identifiable people who are drinking, and the architecture's answer is that they
-   never go anywhere.
-10. **Child components hold no tournament state.** `Arena`'s search query and confirmation
-    flag are view state; they are not persisted and nothing outside `Arena` can observe
-    them.
+1. **No title is computed from stored data, except the chronicle.** Titles come from
+   `rankContestants()`. The one stored set is `faxing_events.attendees` at close
+   (`api/rooms.ts:199`), and it is frozen by design. *Enforced by:* `check:rules` for the
+   function; nothing for the freeze.
+2. **Every duration is a difference of two absolute instants.** Nothing accumulates. *Enforced
+   by:* the derivation in `src/App.tsx:54-55` and `ranking.ts`, and `check:rules`'s expiry cases.
+   A counter would stop when the tab slept and report an expired contest as open.
+3. **A recorded `finished_at` changes only through a host correction or a participant's own
+   first tap.** Participant `finish` and `forfeit` are guarded by
+   `WHERE finished_at IS NULL AND NOT disqualified` (`api/rooms.ts:138`), so a second tap
+   changes nothing. Host actions `reset`, `set-finished`, `set-time` and `disqualify` may
+   overwrite it, and `disqualify` clears it. *Enforced by:* the SQL guard, the host check in
+   `act()`, and the confirmation in `src/components/ContestantCard.tsx:38` before a host clears a finish.
+4. **The forfeit branch precedes the crown branches** in `rankContestants()` (`src/lib/ranking.ts:29`).
+   *Enforced by:* `check:rules`, case "a forfeit does not consume a crown".
+5. **A finish at or after the hour is never a finish.** `finishedInTime` is strict
+   (`src/lib/ranking.ts:14`). *Enforced by:* `check:rules`, cases "a finish after the hour earns no
+   title" and "a late finish cannot claim a vacant crown". Server side, `set-finished` refuses
+   a late finish (`api/rooms.ts:172`).
+6. **Ranks and titles are computed over the whole roster, never the filtered view.** *Enforced
+   by:* `src/components/Arena.tsx:20`, which builds the rank map from `rankedContestants`, not `filtered`.
+7. **A closed room accepts no action.** `act()` fails with 409 when `closed_at` is set
+   (`api/rooms.ts:108`).
+8. **Only the server's clock decides a finish.** The client sends an action, not an instant
+   (except `set-time`, which the host types, bounded by `elapsedMs < hour`). *Enforced by:* the
+   `now` in `handler` (`api/rooms.ts:230`).
+9. **Nothing leaves the device except to our own server.** The only outbound requests are
+   `/api/*` on the same origin and the Google Fonts stylesheet in `index.html`. *Enforced by:*
+   a search for `fetch(`, `XMLHttpRequest` and `WebSocket` in `src/`, which finds calls only in
+   `App.tsx`, `lib/rooms.ts`, `lib/storage.ts` and `EventView.tsx`, all relative URLs.
+10. **Storage in `rooms.ts` never throws out.** `readTokens` and `saveToken` catch every
+    `localStorage` error (`src/lib/rooms.ts:18-42`). *Enforced by:* the try/catch, reviewed by
+    reading only.
+11. **A participant may mark only themselves.** `finish` and `forfeit` reject any `memberId`
+    other than the caller's (`api/rooms.ts:134`). Host targets must belong to the same room
+    (`:115-120`).
 
 ## 10. Known defects
 
-Real, reproducible, and none of them fixed by
-[`restyle-order-livery`](openspec/changes/restyle-order-livery/), which changes no
-behaviour. Each is a candidate for its own change. They are listed worst first.
+Each is real and reproducible unless marked otherwise. None is fixed in this revision.
 
-### D1: A finish recorded after the hour earns a title
+**N1: The client trusts the events API's JSON shape.** `loadEvents` in `src/lib/storage.ts`
+casts the response with `as ApiEvent[]` and nothing checks it. A malformed row fails later, in
+a component, as a blank screen. The chronicle is read-mostly, so the blast radius is small.
+*Verified by reading.*
 
-**Reachable from the interface.** `ContestantCard` renders its finish and forfeit controls
-whenever `!finishedAt && !disqualified`, and that is still true after the hour has expired —
-the card has moved into the `failed` group but its controls are intact. Pressing
-`🍺 Fuldbragt!` there sets `finishedAt` to the current instant, and `getRankedContestants()`
-computes `outOfTime` only for contestants who have *not* finished:
+**N2: The per-card candle is the global clock.** `ContestantCard.tsx` draws the candle from
+`elapsedMs`, which is the hour's elapsed time (`src/components/Arena.tsx:12`), so every unfinished card shows
+the same percentage. `openspec/specs/arena-board` requires "progress against the hour", so the
+behaviour is specified. Whether a percentage beside a person's name implies a measurement that
+was never taken is a judgement for the author, not a defect the code can settle.
 
-```ts
-const finished   = c.finishedAt !== null
-const outOfTime  = !finished && elapsed >= CONTEST_DURATION_MS
-```
+**Resolved since the last revision of these documents:**
 
-So the late finisher takes the `finished` branch and is awarded `Faxeridder` — or
-`Faxekonge`, if no man finished within the hour. A `Hestemann` is promoted to a knight by a
-late tap, and if the crown was still vacant, to king.
+- The old `D1` (a late tap awards a title) is fixed: `finishedInTime` is strict, and
+  `check:rules` asserts it.
+- The old `D4` (`crypto.randomUUID()` fails on plain HTTP) is fixed: `src/lib/id.ts` falls
+  back to `crypto.getRandomValues`.
+- The old `D6` (`loadState()` runs three times) no longer applies: the local persistence layer
+  was removed.
+- The old `D3` (`markDisqualified` clears a finish with no guard) is now a host action with a
+  confirmation (`src/components/ContestantCard.tsx:38`). It is intended; see [§9](#9-invariants) invariant 3.
 
-The tournament's stated rule is *within the hour*, and
-[`title-award`](openspec/specs/title-award/spec.md) specifies this explicitly under
-*A finish recorded after expiry earns no title*. The code violates the spec.
+## 11. Known constraints
 
-The fix is one line at the decision site rather than at the control — hiding the buttons
-after expiry would leave the same bug reachable by any other path to `markFinished` — but it
-needs a decision about what should happen to the tap: refuse it, or record the instant and
-still award `Hestemann`. Recording it is better; the instant is evidence, and "finished, but
-too late" is a real outcome the board could show.
+These are stated because they are real, not because they are about to be fixed.
 
-### D2: The per-card gauge is the global clock
+**The contest depends on one Postgres and one Node process.** A database restart or a crash
+of the Node process pauses every phone's writes until it returns. The clients poll, so they
+recover on their own; actions taken during the outage fail with an error shown on screen.
+*Not measured.*
 
-`Arena` passes the **global** `elapsedMs` to every in-progress card:
+**The Pi is small.** Each container has 0.3 CPU and 128 MB (`deploy/compose.yml`). The load
+figure in [§4](#why-polling-not-websockets) is arithmetic. No measurement exists of the Pi under
+a real party.
 
-```tsx
-<ContestantCard ... elapsedMs={elapsedMs} durationMs={durationMs} ... />
-```
+**Statistics.** This project has no measurements that support a performance claim. There is
+no benchmark, no load test and no latency figure. The only numbers are the constants in code
+(`POLL_MS`, `CONTEST_DURATION_MS`), and their rationale is the comment beside each one.
 
-So every active contestant's beer-fill bar and percentage are identical, and they measure
-the hour rather than the person. This is not fixable as written: the system records nothing
-about how much any individual has drunk, and a contestant's litre is not instrumented.
+**No authentication beyond tokens and one password.** Faxepave is a single shared password,
+compared in constant time (`api/_auth.ts:15`), with a 24-hour cookie (`api/admin.ts:9`).
+Anyone who learns it can write any chronicle event. There is no rate limit on
+`/api/admin`.
 
-It is a defect of *presentation*, not of data. A bar filling with beer next to a person's
-name, captioned with a percentage, states a measurement that was never taken. The fix is a
-caption — and that is the one repair
-[`restyle-order-livery`](openspec/changes/restyle-order-livery/) does make, under
-*The in-progress indication is a vessel gauge, captioned as the hour*.
-
-### D3: `markDisqualified` clears a recorded finish
-
-```ts
-setContestants(prev => prev.map(c =>
-  c.id === id ? { ...c, disqualified: true, finishedAt: null } : c
-))
-```
-
-Unlike `markFinished`, this has no guard on the contestant's current state, and it sets
-`finishedAt: null`. Applied to somebody who has already finished, it destroys the instant
-that decided their crown — silently, with nothing left from which the loss could be
-detected.
-
-**Not currently reachable**, because the card hides both controls once a contestant is
-resolved. It is listed because invariant 4 is the one invariant in this system with no
-recovery path, and this is a live code path one prop change away from breaching it.
-
-### D4: `crypto.randomUUID()` requires a secure context
-
-`addContestant` calls `crypto.randomUUID()`, which is only available in a secure context —
-HTTPS, or `localhost`. It is **not** available over plain HTTP from a LAN address.
-
-This breaks the most natural way to actually use this application: run `npm run dev --host`
-on a laptop and open `http://192.168.1.x:5173` on the phone that will be carried around the
-room. Enlisting the first contestant throws `crypto.randomUUID is not a function`, and there
-is no error boundary, so the screen goes blank.
-
-The workaround today is to run it on the phone's own `localhost`, or to serve over HTTPS, or
-to tunnel. The fix is a four-line fallback — `crypto.randomUUID?.() ?? <counter or
-timestamp+random>` — and it needs no spec change, since
-[`contestant-roster`](openspec/specs/contestant-roster/spec.md) requires only that the
-identifier be unique within the tournament and stable across a reload.
-
-### D5: Persisted state is cast, not validated
-
-```ts
-return JSON.parse(raw) as PersistedState
-```
-
-`as` is an assertion, not a check. Anything that parses as JSON flows into React state
-unexamined — a hand-edited value, a partially written record, or a `-v1` payload from a
-future version that reused the key. The failure surfaces later and somewhere else: a
-`contestants` that is not an array reaches `.map`, and the screen goes blank with a stack
-trace pointing at the render rather than at the load.
-
-The versioned key limits *accidental* schema drift, which is what it was for. It does
-nothing about a malformed payload.
-
-A shape check at the boundary — array-ness, the four fields, the two gender values — would
-turn a blank screen into a fresh tournament, which is the behaviour
-[`session-persistence`](openspec/specs/session-persistence/spec.md) already specifies for an
-unparseable value.
-
-### D6: `loadState()` runs three times on mount
-
-Three lazy initialisers each call it, so mount does three `localStorage` reads and three
-`JSON.parse` calls of the same string.
-
-Harmless — it is one synchronous read of a few hundred bytes, once. It is recorded because
-the obvious tidy-up (hoist the call above the component) is subtly wrong: a module-level
-call runs at import time rather than at mount, and would return stale data if `App` ever
-remounted. The correct tidy-up is one `useState` holding a single restored object, or a
-`useMemo`-free `const restored = loadState()` inside the component body. Neither is urgent.
-
-## 11. What is deliberately absent
+## 12. What is deliberately absent
 
 Naming these stops them being re-proposed as oversights.
 
-**A backend, accounts, and any network call.** Contestant names and finish instants are data
-about identifiable people who are drinking. Keeping it on one device is not a limitation
-worked around; it is the answer. See invariant 9.
+**Accounts.** The host is the device that made the room. A token is the whole identity. This
+keeps the friction to "scan a code and type a name".
 
-**A router and shareable URLs.** The tournament lives in `localStorage`, so a URL could not
-carry it. Adding a route would produce a link that opens an empty tournament on somebody
-else's phone, which is worse than no link.
+**Realtime push.** Polling every two seconds is enough for an hour-long contest, and needs no
+connection to keep alive. See [§4](#why-polling-not-websockets).
 
-**Multi-device or spectator views.** These require a backend. The board is walked around the
-room; that is the interaction the application is designed for, and one device makes it
-impossible to be inconsistent rather than merely unreliable.
+**A clock on the phone.** Times come from the server, so a phone cannot cheat or drift. The
+offset (`src/lib/rooms.ts:87`) makes a skewed phone agree with the room.
 
-**A test suite.** There is none. This is the largest genuine gap in the project — see
-[CLAUDE.md](CLAUDE.md) — and the titling rules in particular are pure, dependency-free, and
-the easiest thing in the world to test. [D1](#d1-a-finish-recorded-after-the-hour-earns-a-title)
-is precisely the defect one assertion would have caught.
+**An audit log of host corrections.** Host fixes leave no trace. This was an explicit non-goal
+in `openspec/changes/faxing-rooms/design.md`: the host is trusted, and the chronicle records
+the result, not the history.
 
-**Undo.** Reset is confirmed instead. Finish and forfeit are unconfirmed and unreversible by
-design; the recovery path for a mis-tap is tolerating a wrong card for an hour.
+**Joining after the start.** Once the clock runs, the roster is frozen for participants.
+The host can add a latecomer (`api/rooms.ts:150`), but that person is measured from the common
+start, which is what the rule requires.
 
-**Editing a contestant after enlistment.** The roster is frozen when the contest begins,
-because every title compares finish times against one common start, and a contestant added
-mid-flight would be measured from a start they did not share.
+**A pause.** The clock is derived from one start instant, so there is nothing to stop. A pause
+would need an accumulator, which the rule against accumulation forbids.
 
-**More than two genders.** There are exactly two crowns, and `gender` is the input to a
-titling rule rather than a demographic record. A third value would need a third crown or a
-rule for what it does instead — a product decision, not a schema one.
+**More than two genders in the crowns, beyond the `other` title.** There are three crowns:
+male, female, other. A fourth option would need a fourth title or a rule for what it does
+instead, which is a product decision.
 
-**A pause.** There is no way to stop the clock, because there is no accumulator to stop
-([§3](#3-the-derivation-chain)). Pausing would mean storing accumulated elapsed time and
-losing the property that makes the clock honest across a reload.
-
-**Theming, dark mode, appearance preferences.** There is one livery.
-
-**State management, a router, a component library, a CSS framework, an icon package, a date
-library.** Two runtime dependencies. `Date.now()`, `Intl`-free integer arithmetic and
-`localStorage` cover everything here.
-
-## 12. Vocabulary
-
-| Danish | Meaning |
-|---|---|
-| **Faxing** | The contest: drinking one litre of Faxe Extra Strong (10%) within one hour |
-| **Faxekonge** | *Faxe king* — the first man to finish within the hour |
-| **Faxedronning** | *Faxe queen* — the first woman to finish within the hour |
-| **Faxeridder** | *Faxe knight* — any other contestant who finishes within the hour |
-| **Hestemann** | *Horseman* — a contestant who gave up, or who did not finish in time |
-| **Kriger** | *Warrior* — a contestant |
-| **Innskriv** | *Enlist* — add a contestant to the roster |
-| **Begyn Kampen** | *Begin the battle* — start the hour |
-| **Fuldbragt** | *Accomplished* — record a finish |
-| **Gav Op** | *Gave up* — record a forfeit |
-| **Ærens Hal** | *Hall of honour* — the finishers' group on the board |
-| **Drikker Endnu** | *Still drinking* — the in-progress group |
-| **Ny Turnering** | *New tournament* — reset |
-| **Drikk med Maadehold** | *Drink in moderation* — the footer notice |
-
-Two further terms arrive with
-[`restyle-order-livery`](openspec/changes/restyle-order-livery/):
-
-| Term | Meaning |
-|---|---|
-| **In Faxe Veritas** | *In Faxe, truth* — the order's motto, displayed beneath the wordmark |
-| **Gloria Faxem!** | *Glory to Faxe!* — the order's chant; starts the contest and acclaims a crown |
+**A test framework.** `check:rules` is the only test, and it is a plain Node script. The
+titling function is the one part of the code that a framework would test; it has no
+dependencies, so none was added. This is a choice, not an oversight; it is also the largest
+gap, since the browser flows have no tests at all.
 
 ## 13. Where the next change attaches
 
-**A visual change** attaches at the token block in `src/index.css` and the rules in
-`src/App.css`. Every colour already resolves through a custom property. Components need
-touching only where new content appears. This is the seam
-[`restyle-order-livery`](openspec/changes/restyle-order-livery/) uses.
+**A rules change** attaches at `rankContestants()` in `src/lib/ranking.ts`. Update the spec in
+`openspec/specs/title-award/` first, then change the branch, then add a case to
+`ranking.demo.ts` that would have failed before.
 
-**A rules change** attaches at `getRankedContestants()` in `App.tsx` and nowhere else. It is
-pure, it takes the roster and two numbers, and it returns titles. Changing a title's
-condition is changing one branch.
-[`openspec/specs/title-award/spec.md`](openspec/specs/title-award/spec.md) is the contract;
-update it first.
+**A new room action** attaches in `act()` in `api/rooms.ts:107`, in the `switch`, and in the
+client's `RoomAction` type (`src/lib/rooms.ts:4`). Decide first which role may use it, and
+write that check before the effect.
 
-**A new field on a contestant** attaches at `Contestant` in `src/types.ts`, the object
-literal in `addContestant`, and — if it must survive a reload — nothing else, because
-`PersistedState` embeds `Contestant[]` directly. Bump `KEY` to `-v2` if the field is
-required rather than optional, or the restore will produce records missing it.
+**A new field on a participant** attaches at `Contestant` in `src/types.ts`, at `toContestant`
+(`api/rooms.ts:29`), and at the `faxing_room_members` table in `server/api.ts`. A column added
+by `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` in `migrate()` keeps existing rooms working.
 
-**Anything that fires on a state transition** — an animation, a sound, a notification — must
-guard against the tick. Titles are recomputed on every render, so a condition like "a
-`Faxekonge` exists" is true for the rest of the hour, and acting on it directly fires 7,200
-times. The pattern is a `useRef` recording what has already fired, held in the component
-that owns the view; see the acclamation in
-[`restyle-order-livery`'s design](openspec/changes/restyle-order-livery/design.md).
+**A visual change** attaches at the stylesheet. `openspec/changes/restyle-order-livery` is a
+proposal to replace the palette; it has not been implemented, and whether it still applies after
+the night-scene change is for the author to decide.
 
-**A test suite** attaches most usefully at `getRankedContestants()`, which would need
-extracting from `App.tsx` into `src/lib/` first — it closes over nothing but its arguments,
-so the extraction is a move. Every defect in [§10](#10-known-defects) except D2 and D4 is
-one assertion away from being caught.
+**Anything that fires on a state transition** (an animation, a sound, a banner) must guard
+against the one-second poll. Titles are recomputed on every render, so "a `Faxekonge` exists"
+is true for the rest of the contest. Record what has already fired in a `useRef` owned by the
+component that shows it. No such guard exists yet; the first one added sets the pattern.
 
-**Anything requiring a second device** does not attach. It needs a backend, and that is a
-different application; see [§11](#11-what-is-deliberately-absent).
+**Anything needing a second server or a real-time channel** does not attach to this codebase
+without a deliberate change of architecture. The rooms design already assumes one process.

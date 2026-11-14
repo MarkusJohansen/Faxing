@@ -1,6 +1,6 @@
-import type { FaxingEvent, RankedContestant } from '../types'
+import type { ArchivedContestant, FaxingEvent, RankedContestant } from '../types'
 
-interface ApiEvent { id: string; title: string; event_date: string; official: boolean; attendees: RankedContestant[] }
+interface ApiEvent { id: string; title: string; event_date: string; official: boolean; attendees: ArchivedContestant[] }
 const adminHeaders = { 'Content-Type': 'application/json' }
 export async function adminLogin(password: string): Promise<void> { const response = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) }); if (!response.ok) { const details = await response.json().catch(() => null) as { error?: string } | null; throw new Error(details?.error || 'Login failed') } }
 export async function adminLogout(): Promise<void> { await fetch('/api/admin', { method: 'DELETE' }) }
