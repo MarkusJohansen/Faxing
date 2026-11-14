@@ -128,8 +128,7 @@ crown and leave the next real finisher as a knight. Branch order is the rule.
 the facts. The one exception is the chronicle, which freezes titles at close; see
 [§5](#5-the-chronicle).
 
-`src/lib/ranking.demo.ts` is the only test. `npm run check:rules` runs seven assertions under
-Node, and each names the silent failure it guards. Last run: all seven passed.
+`npm run check:rules` is the only test command. It runs the `src/lib/*.demo.ts` files under Node, and each assertion names the silent failure it guards. Last run: all passed.
 
 ## 4. A shared room
 
@@ -214,6 +213,16 @@ is the record, and a record that re-derived its titles would change if the rule 
 The cost is that the chronicle is editable: `PUT /api/events` accepts `attendees` verbatim
 (`api/events.ts:30-31`), so a Faxepave session can set any title on a closed event. That is
 the intended power of the operator, and it is also the only place a title can be set by hand.
+
+### Who is who
+
+A chronicle entry is a name. Which entries are one person is decided by `personKey()` in
+`src/lib/people.ts`: the entry's `personId` if it has one, otherwise its name trimmed and
+lower-cased. `personId` is stored in the `attendees` jsonb and is set by `npm run link:people` from
+`scripts/history/people.json`, for entries the record wrote by first name only; renaming an entry
+drops it. The home screen counts people this way, the lobby offers them as suggestions
+(`src/lib/suggest.ts`), and `src/lib/honours.ts` marks past champions (a crown at an official
+Faxing, derived from the chronicle) and the lore's pope and saints (a short table).
 
 ## 6. Persistence and the database
 

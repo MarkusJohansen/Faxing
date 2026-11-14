@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ArchivedContestant, FaxingEvent, RecordedTitle } from '../types'
 import { newId } from '../lib/id'
+import { renamed } from '../lib/people'
 import { formatDate, formatTime } from '../lib/format'
 
 interface Props {
@@ -47,7 +48,7 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
   }
 
   const update = (id: string, patch: Partial<ArchivedContestant>) => {
-    setDraft(value => ({ ...value, contestants: value.contestants.map(contestant => contestant.id === id ? { ...contestant, ...patch } : contestant) }))
+    setDraft(value => ({ ...value, contestants: value.contestants.map(contestant => contestant.id !== id ? contestant : patch.name !== undefined ? { ...renamed(contestant, patch.name), ...patch } : { ...contestant, ...patch }) }))
     setSavedMessage('')
   }
 

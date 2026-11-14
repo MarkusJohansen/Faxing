@@ -100,7 +100,7 @@ The full path, with the permission table and the schema, is in
 | Workstream | Status | What backs it |
 | --- | --- | --- |
 | Shared rooms: join by code, host runs the start and corrections, close into the chronicle | **Built** | `openspec/changes/faxing-rooms` marked complete; commit `3dd4747` |
-| Titles: five crowns and their rules, with the forfeit and late-finish cases | **Built** | `npm run check:rules`, 7 assertions, all passing |
+| Titles: five crowns and their rules, with the forfeit and late-finish cases | **Built** | `npm run check:rules`, all passing |
 | The chronicle: archive list, event view, Faxepave-only edits | **Built** | `api/events.ts`, `src/components/History.tsx`, `EventView.tsx` |
 | The old Faxinger: five sessions recorded outside the app, filed from a checked-in record | **Built**, not yet filed on the Pi | `docs/legacy-faxinger.md`, `npm run seed:history`, `openspec/changes/legacy-chronicle` |
 | Moonlit night livery: header scene, torches, graveyard footer | **Built, 19 of 23 tasks** | `openspec/changes/moonlit-gothic-livery` |
@@ -156,7 +156,7 @@ These checks prove the install is real. Run them in order.
 
 ```bash
 npm run typecheck     # no output and exit 0
-npm run check:rules   # seven lines beginning "ok"
+npm run check:rules   # only lines beginning "ok"
 curl -s -w ' [%{http_code}]\n' http://localhost:5173/api/rooms
 ```
 
@@ -175,7 +175,8 @@ checks above were run; the room flow in a browser was not.
 npm install                  # once
 npm run dev                  # Vite on 0.0.0.0:5173, with the /api handlers mounted
 npm run typecheck            # tsc for the app and for the server, strict
-npm run check:rules          # the titling rules, as seven assertions under Node
+npm run check:rules          # the demos in src/lib (titling, tribute, people, suggestions, honours), under Node
+npm run link:people          # links first-name-only chronicle entries to their person, by hand; see below
 npm run seed:history         # files the old Faxinger into a running server, by hand; see below
 npm run build                # typecheck app, Vite build to dist/, bundle server.cjs
 npm run build:server         # only the server bundle, from server/index.ts
@@ -230,7 +231,7 @@ src/
 ├── App.css                   every component rule
 ├── lib/
 │   ├── ranking.ts            the only place a title is decided: pure, shared with the server
-│   ├── ranking.demo.ts       the seven assertions behind npm run check:rules
+│   ├── ranking.demo.ts       the titling assertions behind npm run check:rules (the other *.demo.ts sit beside their code)
 │   ├── contest.ts            CONTEST_DURATION_MS, declared once for client and server
 │   ├── rooms.ts              room polling, actions, and the tokens kept on the device
 │   ├── storage.ts            fetch wrappers for the chronicle (/api/events, /api/admin)
@@ -254,6 +255,8 @@ api/                          Vercel-style handlers, run unchanged by the Pi ser
 
 scripts/
 ├── history/legacy-events.json  the old Faxinger, encoded from docs/legacy-faxinger.md
+├── history/people.json       first-name-only entries and typos, mapped to the full name
+├── link-people.ts            npm run link:people: sets personId on those entries
 └── seed-history.ts           npm run seed:history: validates the record, then files the
                               missing events through POST /api/events
 
@@ -298,8 +301,7 @@ There are no other configuration files. The timing constants are code, not setti
 
 ## Measuring it
 
-**What exists:** `npm run check:rules` runs seven assertions over the titling function under
-Node. It covers the four titles, the still-drinking and expired cases, the forfeit that does
+**What exists:** `npm run check:rules` runs the demos in `src/lib` under Node, the titling one first. It covers the four titles, the still-drinking and expired cases, the forfeit that does
 not consume a crown, the late finish that cannot claim one, and the board's order. Each
 assertion names the silent failure it guards.
 
@@ -311,7 +313,7 @@ the row lock, the chronicle write), anything in the browser, and anything about 
 There are no benchmarks and no load tests. The stated limits, such as the Pi's 0.3 CPU and 128
 MB, are configuration, not measurements.
 
-**Results so far:** seven of seven assertions pass as of this revision. Nothing else is
+**Results so far:** every assertion passes as of this revision. Nothing else is
 measured.
 
 ---

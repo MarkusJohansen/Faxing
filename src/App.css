@@ -741,6 +741,81 @@
   margin-top: 1.25rem;
 }
 
+.name-suggestions {
+  margin-top: .75rem;
+}
+
+.name-suggestions ul {
+  list-style: none;
+  margin: .35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.suggestion-btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: 0 .8rem;
+  background: var(--stone-700);
+  border: var(--px) solid var(--stone-500);
+  color: var(--moon-100);
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.suggestion-btn:hover:not(:disabled),
+.suggestion-btn:focus-visible {
+  border-color: var(--lantern-400);
+  color: var(--moon-50);
+}
+
+.suggestion-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* Honoured people: a coloured edge and a word, never colour alone. Saint > pope > champion. */
+.honour-mark {
+  font-size: .9rem;
+  white-space: nowrap;
+}
+
+.honoured-champion { --honour: var(--lantern-400); }
+.honoured-pope { --honour: var(--flame-200); }
+.honoured-saint { --honour: var(--moon-50); }
+
+/* An inset edge, not a border: it must not push the name out of line with unmarked rows. */
+.contestant-item.honoured {
+  box-shadow: inset calc(var(--px) * 2) 0 0 var(--honour);
+}
+
+.suggestion-btn.honoured:not(:disabled) {
+  border-color: var(--honour);
+}
+
+.honoured .honour-mark {
+  color: var(--honour);
+  margin-left: auto;
+}
+
+.suggestion-btn .honour-mark {
+  margin-left: 0;
+}
+
+.honoured-saint .honour-mark {
+  text-shadow: 0 0 .5rem var(--honour);
+}
+
+.suggestion-note {
+  color: var(--mist-200);
+  font-size: .9rem;
+}
+
 .form-row {
   display: flex;
   gap: .6rem;
