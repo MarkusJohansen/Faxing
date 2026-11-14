@@ -9,6 +9,7 @@ import EventErrorBoundary from './components/EventErrorBoundary'
 import RoomLobby from './components/RoomLobby'
 import RoomsPanel from './components/RoomsPanel'
 import HostGuide from './components/HostGuide'
+import Lore from './components/Lore'
 import type { Screen, FaxingEvent } from './types'
 import { rankContestants } from './lib/ranking'
 import { newId } from './lib/id'
@@ -80,7 +81,7 @@ export default function App() {
       </>}
       {screen === 'history' && <History events={events} onOpen={event => { setActiveEventId(event.id); setScreen('event') }} onCreate={addPastEvent} isAdmin={isAdmin} />}
       {screen === 'event' && !activeEvent ? <section className="event-loading scroll-panel"><p className="eyebrow">Faxe Ordenens arkiv</p><h2 className="panel-title">Henter Faxing…</h2><button className="back-link" onClick={() => setScreen('history')}>Tilbake til krøniken</button></section> : screen === 'event' && activeEvent && <EventErrorBoundary><EventView event={activeEvent} isAdmin={isAdmin} onBack={() => navigate('history')} onSave={saveAdminEvent} onDelete={removeAdminEvent} /></EventErrorBoundary>}
-      {screen === 'lore' && <section className="lore-screen scroll-panel"><p className="eyebrow">Faxe Ordenens annaler</p><h2 className="panel-title">Historien om Faxe Ordenen</h2><p className="panel-desc">En orden bygget på fellesskap, mot og den edle kunst å tømme en Faxe innen timens utløp.</p><div className="lore-grid"><article><span className="lore-year">1901</span><h3>Ordenen grunnlegges</h3><p>De første riddere samles ved bryggeriet og sverger den eldgamle ed.</p></article><article><span className="lore-year">Hvert semester</span><h3>Den offisielle dyst</h3><p>En ny konge og dronning innskrives i krøniken.</p></article><article><span className="lore-year">I dag</span><h3>Tradisjonen lever</h3><p>Enhver kan føye sitt navn til historien.</p></article></div></section>}
+      {screen === 'lore' && <Lore />}
     </main>
     <footer className="app-footer"><GraveScene /><p>Faxe Ordenens offisielle arkiv · Brygget med ære</p><p className="moderation-notice">Drikk med måte, og pass på hverandre.</p></footer>
   </div>

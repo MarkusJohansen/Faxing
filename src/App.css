@@ -680,6 +680,57 @@
   font-size: .95rem;
 }
 
+/* The chronicle: long-form copy, one panel per chapter, each with a pixel emblem. */
+.lore-chapters {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  margin: 1.5rem 0;
+}
+
+.lore-chapters article {
+  padding: .9rem 1.1rem;
+  background: var(--night-800);
+  border: var(--px) solid var(--night-900);
+  box-shadow: inset var(--px) var(--px) 0 var(--night-900), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 var(--stone-600);
+}
+
+.lore-chapters header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: .6rem;
+}
+
+.lore-emblem {
+  flex: none;
+  image-rendering: pixelated;
+}
+
+.lore-chapters h3 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: 400;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--moon-50);
+}
+
+.lore-chapters p,
+.lore-chapters li {
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+.lore-chapters p + p,
+.lore-chapters p + ul {
+  margin-top: .6rem;
+}
+
+.lore-chapters ul {
+  padding-left: 1.2rem;
+}
+
 /* ── Registration ─────────────────────────────────────── */
 .registration-screen {
   max-width: 860px;
