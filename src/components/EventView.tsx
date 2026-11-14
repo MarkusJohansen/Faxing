@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { FaxingEvent, RankedContestant } from '../types'
+import type { ArchivedContestant, FaxingEvent, RecordedTitle } from '../types'
 import { newId } from '../lib/id'
 
 interface Props {
@@ -13,6 +13,13 @@ interface Props {
 const formatTime = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, '0')}`
 const formatDate = (date: number) => { const timestamp = Number(date); return Number.isFinite(timestamp) && Number.isFinite(new Date(timestamp).getTime()) ? new Intl.DateTimeFormat('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' }).format(timestamp) : 'Ukjent dato' }
 const formatInputDate = (date: number) => { const timestamp = Number(date); return Number.isFinite(timestamp) && Number.isFinite(new Date(timestamp).getTime()) ? new Date(timestamp).toISOString().slice(0, 10) : '' }
+const UNKNOWN_TIME = 'Tid ukjent'
+/** A duration the record states, or the honest word for one it does not. */
+const formatDuration = (ms: number | null) => ms === null ? UNKNOWN_TIME : formatTime(ms)
+/** The titles only the old records use: there is no crown to draw, so the row names them. */
+const isLegacyTitle = (title: RecordedTitle | null): title is 'Erkekonge' | 'Kronprins' | 'Prins' => title === 'Erkekonge' || title === 'Kronprins' || title === 'Prins'
+/** A recorded time or a title is evidence enough to count as finished, even with no instant. */
+const hasFinished = (contestant: ArchivedContestant) => !contestant.disqualified && (contestant.finishedAt !== null || contestant.elapsed !== null || contestant.title !== null)
 
 export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
   const [draft, setDraft] = useState(() => ({ ...event, contestants: Array.isArray(event.contestants) ? event.contestants : [] }))
@@ -40,7 +47,7 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
     window.alert('Logg inn som Faxepave for å rette i denne Faxing.')
   }
 
-  const update = (id: string, patch: Partial<RankedContestant>) => {
+  const update = (id: string, patch: Partial<ArchivedContestant>) => {
     setDraft(value => ({ ...value, contestants: value.contestants.map(contestant => contestant.id === id ? { ...contestant, ...patch } : contestant) }))
     setSavedMessage('')
   }
@@ -54,7 +61,7 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
     if (!Number.isInteger(minutes) || minutes < 0) return setAddError('Skriv hele minutter, 0 eller mer.')
     if (!Number.isInteger(seconds) || seconds < 0 || seconds > 59) return setAddError('Sekunder skal være mellom 0 og 59.')
 
-    const attendee: RankedContestant = {
+    const attendee: ArchivedContestant = {
       id: newId(),
       name,
       gender: newGender,
@@ -93,7 +100,11 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
     }
   }
 
-  const sorted = [...draft.contestants].filter(Boolean).map(contestant => ({ elapsed: Number.isFinite(Number(contestant.elapsed)) ? Number(contestant.elapsed) : 0, finishedAt: contestant.finishedAt ?? null, disqualified: Boolean(contestant.disqualified), title: contestant.title ?? null, id: contestant.id, name: contestant.name || 'Ukjent deltager', gender: contestant.gender })).sort((a, b) => (a.finishedAt ? a.elapsed : Number.MAX_SAFE_INTEGER) - (b.finishedAt ? b.elapsed : Number.MAX_SAFE_INTEGER))
+  // A recorded duration is shown, never re-derived. When a record omits one (William, the first
+  // Kronprins), the order it was written in stands: sorting by a time one row does not have
+  // would invent a place for it.
+  const recorded = [...draft.contestants].filter(Boolean).map(contestant => ({ elapsed: contestant.elapsed !== null && Number.isFinite(Number(contestant.elapsed)) ? Number(contestant.elapsed) : null, finishedAt: contestant.finishedAt ?? null, disqualified: Boolean(contestant.disqualified), title: contestant.title ?? null, id: contestant.id, name: contestant.name || 'Ukjent deltager', gender: contestant.gender }))
+  const sorted = recorded.some(contestant => contestant.elapsed === null) ? recorded : [...recorded].sort((a, b) => (a.elapsed ?? 0) - (b.elapsed ?? 0))
 
   return (
     <div className="event-view scroll-panel">
@@ -137,6 +148,6 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
   )
 }
 
-function ResultRow({ contestant: c, index, isAdmin, onUpdate }: { contestant: RankedContestant; index: number; isAdmin: boolean; onUpdate: (id: string, patch: Partial<RankedContestant>) => void }) {
-  return <div className={`result-row ${c.title === 'Faxekonge' || c.title === 'Faxedronning' ? 'royal-result' : ''}`} role="row"><span className="result-rank" role="cell">{index + 1}</span><span className="result-person" role="cell">{isAdmin ? <input aria-label={`Navn på deltager ${index + 1}`} className="medieval-input admin-name-input" value={c.name} onChange={event => onUpdate(c.id, { name: event.target.value })} /> : <span className="result-name">{c.name}</span>}{isAdmin && <select aria-label={`Status for ${c.name}`} className="medieval-input admin-status" value={c.disqualified ? 'out' : c.finishedAt ? 'done' : 'active'} onChange={event => onUpdate(c.id, event.target.value === 'out' ? { disqualified: true, finishedAt: null } : event.target.value === 'done' ? { disqualified: false, finishedAt: c.finishedAt ?? Date.now() } : { disqualified: false, finishedAt: null })}><option value="done">Fullbragt</option><option value="active">Ikke fullbragt</option><option value="out">Hestemann</option></select>}</span><strong role="cell" className={c.title === 'Hestemann' || c.disqualified ? 'result-time result-shame' : 'result-time'}>{c.title === 'Hestemann' || c.disqualified ? 'Hestemann' : formatTime(c.elapsed)}</strong><span role="cell" className="result-title">{c.title === 'Faxekonge' || c.title === 'Faxedronning' ? <span className="royal-crown" aria-label={c.title} title={c.title}>♛</span> : '—'}</span></div>
+function ResultRow({ contestant: c, index, isAdmin, onUpdate }: { contestant: ArchivedContestant; index: number; isAdmin: boolean; onUpdate: (id: string, patch: Partial<ArchivedContestant>) => void }) {
+  return <div className={`result-row ${c.title === 'Faxekonge' || c.title === 'Faxedronning' ? 'royal-result' : ''}`} role="row"><span className="result-rank" role="cell">{index + 1}</span><span className="result-person" role="cell">{isAdmin ? <input aria-label={`Navn på deltager ${index + 1}`} className="medieval-input admin-name-input" value={c.name} onChange={event => onUpdate(c.id, { name: event.target.value })} /> : <span className="result-name">{c.name}</span>}{isLegacyTitle(c.title) && <span className="result-recorded-title">{c.title}</span>}{isAdmin && <select aria-label={`Status for ${c.name}`} className="medieval-input admin-status" value={c.disqualified ? 'out' : hasFinished(c) ? 'done' : 'active'} onChange={event => onUpdate(c.id, event.target.value === 'out' ? { disqualified: true, finishedAt: null } : event.target.value === 'done' ? { disqualified: false, finishedAt: c.finishedAt ?? Date.now() } : { disqualified: false, finishedAt: null })}><option value="done">Fullbragt</option><option value="active">Ikke fullbragt</option><option value="out">Hestemann</option></select>}</span><strong role="cell" className={c.title === 'Hestemann' || c.disqualified ? 'result-time result-shame' : 'result-time'}>{c.title === 'Hestemann' || c.disqualified ? 'Hestemann' : formatDuration(c.elapsed)}</strong><span role="cell" className="result-title">{c.title === 'Faxekonge' || c.title === 'Faxedronning' ? <span className="royal-crown" aria-label={c.title} title={c.title}>♛</span> : '—'}</span></div>
 }

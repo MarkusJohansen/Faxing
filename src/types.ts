@@ -22,12 +22,25 @@ export interface RankedContestant extends Contestant {
   elapsed: number
 }
 
+/** The titles the old Faxinger used, which rankContestants() no longer awards. */
+export type RecordedTitle = Title | 'Erkekonge' | 'Kronprins' | 'Prins'
+
+/**
+ * A chronicle entry exactly as the record wrote it. The old Faxinger were written down by hand:
+ * they state durations instead of clock times, so an archived contestant may have no instant
+ * behind its time, and one of them (William, the first Kronprins) has no time at all.
+ */
+export interface ArchivedContestant extends Contestant {
+  title: RecordedTitle | null
+  elapsed: number | null
+}
+
 export interface FaxingEvent {
   id: string
   name: string
   date: number
   official: boolean
-  contestants: RankedContestant[]
+  contestants: ArchivedContestant[]
   password?: string
 }
 
