@@ -6,8 +6,9 @@
     "moduleResolution": "bundler",
     "types": ["node"],
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "noEmit": true,
     "strict": true
   },
-  "include": ["server", "api"]
+  "include": ["server", "api", "scripts"]
 }

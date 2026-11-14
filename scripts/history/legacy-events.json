@@ -66,6 +66,38 @@
       ]
     },
     {
+      "id": "legacy-2025-11-04",
+      "title": "Kontor til Kontor med Tihlde, Abakus og Online styrer",
+      "date": "2025-11-04",
+      "official": false,
+      "contestants": [
+        { "name": "Marius Brun", "gender": "male", "time": "5:56" },
+        { "name": "Sander Rom Skofsrud", "gender": "male", "time": "6:37" },
+        { "name": "Johannes", "gender": "male", "time": "22:56" },
+        { "name": "Torjus Østensen", "gender": "male", "time": "26:01" },
+        { "name": "Laurits Rossebø", "gender": "male", "time": "26:32" },
+        { "name": "Ingrid Marie Nikolaisen", "gender": "female", "time": "29:37" },
+        { "name": "Torkil Thomassen", "gender": "male", "time": "34:48" },
+        { "name": "Daniel Evensen", "gender": "male", "time": "34:50" },
+        { "name": "Oskar Larsen", "gender": "male", "time": "36:56" },
+        { "name": "Ailin Tinglum", "gender": "female", "time": "39:31" },
+        { "name": "Evine", "gender": "female", "time": "39:48" },
+        { "name": "Nathalie Graidy Andreassen", "gender": "female", "time": "40:02" },
+        { "name": "Peder Brennum", "gender": "male", "time": "40:02" },
+        { "name": "Live", "gender": "female", "time": "41:41" },
+        { "name": "Ola", "gender": "male", "time": "43:13" },
+        { "name": "Iver", "gender": "male", "time": "44:00" },
+        { "name": "Erik", "gender": "male", "time": "44:47" },
+        { "name": "Andrej", "gender": "male", "time": "45:30" },
+        { "name": "Synne", "gender": "female", "time": "49:05" },
+        { "name": "Brage Andreas", "gender": "male", "time": "56:00" },
+        { "name": "Sara Alvestad Kjerstad", "gender": "female", "time": "56:28" },
+        { "name": "Oda", "gender": "female", "time": "57:53" },
+        { "name": "Mathias", "gender": "male", "time": "59:17" },
+        { "name": "Eman Hashami", "gender": "female", "title": "Hestemann" }
+      ]
+    },
+    {
       "id": "legacy-2026-09-18",
       "title": "Faxetidene fra Fredagen",
       "date": "2026-09-18",

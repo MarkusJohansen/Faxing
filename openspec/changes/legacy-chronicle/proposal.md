@@ -1,6 +1,6 @@
 ## Why
 
-The order's history is older than this application. Four Faxings are recorded only as chat
+The order's history is older than this application. Five Faxings are recorded only as chat
 messages, so the chronicle — the one place a Faxing is documented — begins after them. The only
 door into `faxing_events` is closing a room, which a Faxing held before rooms existed cannot do.
 
@@ -8,9 +8,10 @@ door into `faxing_events` is closing a room, which a Faxing held before rooms ex
 
 - **A checked-in record of the old Faxings**: `docs/legacy-faxinger.md` keeps the original
   messages, and `scripts/history/legacy-events.json` encodes the same results for the machine.
-- **An additive seeder**: `npm run seed:history` validates the record and inserts the events
-  that are not yet in the chronicle. An id already present is left alone, so re-running never
-  undoes a Faxepave's correction.
+- **An additive seeder, run by hand**: `npm run seed:history` validates the record and files the
+  missing events into a running server through the Faxepave's `POST /api/events`. An id already
+  present is left alone, so re-running never undoes a Faxepave's correction, and an event is held
+  back while the chronicle already has another on the same day. Nothing files automatically.
 - **Recorded titles**: a chronicle entry carries the titles its record states, including names
   the current rules no longer award (`Erkekonge`, `Kronprins`, `Prins`). Nothing is derived.
 - **An unknown duration**: a finisher whose old record states no time is shown as `Tid ukjent`,
@@ -32,11 +33,13 @@ door into `faxing_events` is closing a room, which a Faxing held before rooms ex
 
 ## Impact
 
-- New: `docs/legacy-faxinger.md`, `scripts/history/legacy-events.json`, `scripts/seed-history.mjs`,
-  `npm run seed:history`.
+- New: `docs/legacy-faxinger.md`, `scripts/history/legacy-events.json`,
+  `scripts/seed-history.ts`, `npm run seed:history`.
+- `tsconfig.server.json`: `scripts` is typechecked with the server.
 - `src/types.ts`: `RecordedTitle`, `ArchivedContestant`; `FaxingEvent.contestants` becomes
   `ArchivedContestant[]`.
 - `src/components/EventView.tsx`, `src/App.css`: recorded titles, `Tid ukjent`, recorded order.
 - `src/lib/storage.ts`: the chronicle's contestant type widened to `ArchivedContestant`.
-- Uses the existing `pg` dependency and `DATABASE_URL`. No new dependency, no new network
-  target, no schema change: an imported event is a row written the way `close` writes one.
+- Uses the existing Faxepave login and `POST /api/events`. No new dependency, no new network
+  target, no schema change, and no server code: an imported event is a row shaped the way `close`
+  writes one.

@@ -35,30 +35,81 @@ source.
 - **THEN** every place, time and stated title can be found in that message, and every name either
   appears there or is a name the file records as completed by the organizer
 
+### Requirement: Seeding is run by hand, through the Faxepave's door
+`npm run seed:history` SHALL file the record into the running Faxing server named on its command
+line, by logging in as Faxepave and sending each event to `POST /api/events`. It SHALL NOT need
+access to the database. The server SHALL NOT file the record on its own: nothing about the import
+runs at start or on a schedule, so an event a Faxepave deletes is not brought back.
+
+The command SHALL write only when `--write` is passed. Without it, the command SHALL read the
+chronicle and report what it would file. It SHALL accept `--dry-run`, which validates and reports
+the record without contacting a server.
+
+#### Scenario: Looking before writing
+- **WHEN** the command is given a server and no `--write`
+- **THEN** it reports each event as already there, held back, or to file, and writes nothing
+
+#### Scenario: Previewing without a server
+- **WHEN** `--dry-run` is passed and no server is named
+- **THEN** the command reports the record and exits successfully
+
+#### Scenario: A deleted event and a restart
+- **WHEN** a Faxepave deletes a filed event and the server restarts
+- **THEN** the event is still gone
+
+#### Scenario: No password
+- **WHEN** `--write` is passed and `FAXEPAVE_PASSWORD` is unset
+- **THEN** the command stops with a message naming the variable, and writes nothing
+
+#### Scenario: A wrong password
+- **WHEN** `--write` is passed with a password the server refuses
+- **THEN** the command stops with the server's answer, and writes nothing
+
 ### Requirement: Seeding is additive and repeatable
-`npm run seed:history` SHALL validate the whole record before writing anything, then insert the
-events whose id is not already in `faxing_events`. An event id that exists SHALL be left
+The command SHALL validate the whole record before sending anything. It SHALL only add events: it
+SHALL NOT update or delete one. An event whose id is already in the chronicle SHALL be left
 untouched, so a second run changes nothing and a Faxepave's correction is never overwritten.
 
-The command SHALL accept `--dry-run`, which validates and reports the planned rows without
-connecting to a database. A record that fails validation SHALL stop the run with a message
-naming the event and the contestant, and SHALL write no rows.
+An event SHALL be held back while the chronicle holds another event on the same calendar day in
+Norway, and the command SHALL name that event. The chronicle is older than the record, and that
+Faxing may already have been entered by hand under another id; a person decides which stays.
+
+A record that fails validation SHALL stop the run with a message naming the event and the
+contestant, before any server is contacted. A request that fails SHALL stop the run; the events
+filed before it stay filed, and the next run files the rest.
+
+An event's date SHALL be stored as noon UTC of its recorded day, so the stored instant does not
+depend on the clock of the machine that filed it. A date that is not a real calendar day SHALL
+fail validation.
 
 #### Scenario: First run
-- **WHEN** `npm run seed:history` runs against a chronicle that has none of the four events
-- **THEN** four rows are inserted and the command reports four inserted, none present
+- **WHEN** the command runs with `--write` against a chronicle that has none of the five events
+- **THEN** five events are filed
 
 #### Scenario: Second run
 - **WHEN** the same command runs again
-- **THEN** no row changes, and the command reports zero inserted, four already present
+- **THEN** no event changes, and the command reports five already there and nothing to file
+
+#### Scenario: A corrected event
+- **WHEN** a Faxepave corrects a name in a filed event and the command runs again
+- **THEN** the correction is still there
+
+#### Scenario: The day already has an event
+- **WHEN** the chronicle holds a hand-entered event dated 18 September 2026 and the command runs
+- **THEN** `legacy-2026-09-18` is not filed, the command names the hand-entered event, and the
+  other four events are filed
+
+#### Scenario: The hand-entered event is removed
+- **WHEN** that hand-entered event is deleted and the command runs again
+- **THEN** `legacy-2026-09-18` is filed
 
 #### Scenario: A malformed time
 - **WHEN** an encoded time is `"1:75"`
-- **THEN** the run stops before connecting, naming that event and contestant, and inserts nothing
+- **THEN** the run stops before contacting a server, naming that event and contestant
 
-#### Scenario: Previewing without a database
-- **WHEN** `--dry-run` is passed and `DATABASE_URL` is unset
-- **THEN** the command reports the planned rows and exits successfully
+#### Scenario: A date that does not exist
+- **WHEN** an encoded date is `2025-02-30`
+- **THEN** validation fails naming that event, instead of filing it under 2 March
 
 ### Requirement: An imported title is transcribed, never derived
 The seeder SHALL store the title the record states for each contestant and SHALL NOT call
@@ -114,10 +165,10 @@ re-sorting around it would report a guess as a place.
 - **THEN** the table keeps the order Scott, William, Martin, Ådne, …, as the record wrote it
 
 ### Requirement: Importing adds no network target and no dependency
-The seeder SHALL talk only to the database named by `DATABASE_URL` (or `POSTGRES_URL`) and SHALL
-use the existing `pg` dependency. It SHALL NOT be imported from `src/`, and it SHALL NOT add a
-runtime dependency, an external service, or a captured clock value.
+The seeder SHALL talk only to the Faxing server named on its command line, and only to that
+server's `/api/admin` and `/api/events`. It SHALL NOT be imported from `src/`, `api/` or
+`server/`, and it SHALL NOT add a dependency, an external service, or a captured clock value.
 
-#### Scenario: A machine with no database
-- **WHEN** the seeder runs without `DATABASE_URL` and without `--dry-run`
-- **THEN** it stops with a message naming the variable, and writes nothing
+#### Scenario: No server named
+- **WHEN** the seeder runs with no server and without `--dry-run`
+- **THEN** it stops with a message asking for one, and contacts nothing

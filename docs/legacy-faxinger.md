@@ -1,6 +1,6 @@
 # De gamle faxingene
 
-Four Faxings were recorded outside this application. They survive only as chat messages, and
+Five Faxings were recorded outside this application. They survive only as chat messages, and
 the chronicle — the one place a Faxing is documented — could not reach them: the only door into
 it is closing a room.
 
@@ -217,6 +217,57 @@ kept here and not in his name.
 
 ---
 
+## 4 November 2025 — Kontor til Kontor med Tihlde, Abakus og Online styrer (unofficial)
+
+Supplied by Markus on 14 November 2026, with the title and the date. **This is not the original
+message.** It is a table worked out from it, already sorted by time, and the message itself is
+not in this file. Until it is added, the table is the record for this Faxing.
+
+```
+ #   Time   Name                          Group    Done
+ 1   5:56   Marius Brun                   Online
+ 2   6:37   Sander Rom Skofsrud           TIHLDE   ✓
+ 3  22:56   Johannes                      Online
+ 4  26:01   Torjus Østensen               Abakus   ✓
+ 5  26:32   Laurits Rossebø               Abakus
+ 6  29:37   Ingrid Marie Nikolaisen       TIHLDE   ✓
+ 7  34:48   Torkil Thomassen              TIHLDE
+ 8  34:50   Daniel Evensen                TIHLDE
+ 9  36:56   Oskar Larsen                  Abakus   ✓
+10  39:31   Ailin Tinglum                 Online
+11  39:48   Evine                         TIHLDE   ✓
+12  40:02   Nathalie Graidy Andreassen    TIHLDE   ✓
+13  40:02   Peder Brennum                 Abakus
+14  41:41   Live                          Online
+15  43:13   Ola                           Online
+16  44:00   Iver
+17  44:47   Erik
+18  45:30   Andrej
+19  49:05   Synne                         Online   ✓
+20  56:00   Brage Andreas (endru faxing)  Online
+21  56:28   Sara Alvestad Kjerstad        TIHLDE
+22  57:53   Oda                                    ✓
+23  59:17   Mathias
+
+Hestemann: Eman Hashami
+```
+
+**Encoded as** `legacy-2025-11-04`, **unofficial**. The table names no title except the
+Hestemann, so no finisher carries one. Three things in it were worked out, not read, and are
+unconfirmed:
+
+- **The times were converted** from a countdown, as 60:00 minus the value written. Sara's 56:28
+  comes from a written 3:32; if that was already an elapsed time, she finished first.
+- **Brage's 56:00** comes from "4 min", read as 4:00 left on the clock.
+- **Sara's group** was written "Thildekå" and read as TIHLDE.
+
+The chronicle has nowhere to put the group or the Done column, so they are kept only here; what
+Done marks is not recorded. Brage's "(endru faxing)" is the record's aside, kept here and not in
+his name. Every gender in this event is read off the name, because the organizer has supplied
+none; Ailin, Evine, Live and Eman are the least certain.
+
+---
+
 ## How the encoding decided
 
 - **Durations, not instants.** None of the records gives a clock time, only a duration. The
@@ -243,9 +294,16 @@ kept here and not in his name.
 ## Filing them
 
 ```bash
-npm run seed:history -- --dry-run     # validate the record, print what would be written
-npm run seed:history                  # write the events that are not there yet (needs DATABASE_URL)
+npm run seed:history -- --dry-run                    # validate the record, contact nothing
+npm run seed:history -- https://faxing.example       # show what would be filed there
+FAXEPAVE_PASSWORD=… npm run seed:history -- https://faxing.example --write
 ```
 
-The seeder is additive: an id already in `faxing_events` is left untouched, so running it twice
-changes nothing and never overwrites a correction made in the interface.
+The command is run once, by hand, against a running server, and files through the Faxepave's
+`POST /api/events`. Without `--write` it only reports.
+
+Filing only adds. An id already in the chronicle is left alone, so running it twice changes
+nothing and never overwrites a correction made in the interface. An event is held back while the
+chronicle already has another event on the same day: decide which of the two stays, remove the
+other in the interface, and run it again. Nothing runs it automatically, so an event a Faxepave
+deletes stays deleted; running the command again would offer to file it again.

@@ -2,7 +2,7 @@
 
 ### A checked-in fixture plus a seeder, not an importer in the interface
 
-The record is four messages, read once. An import screen would be a permanent feature for a
+The record is five Faxings, read once. An import screen would be a permanent feature for a
 one-time job, and it would have to carry a parser for prose. A JSON file next to a transcript
 is reviewable in a pull request, diffable, and can be checked without a database.
 
@@ -11,16 +11,45 @@ milliseconds, so a reviewer can compare it with the message line by line. The se
 conversion once, and validation rejects anything that is not a minute-second time inside the
 hour.
 
-### `ON CONFLICT DO NOTHING`, not an upsert
+### Add only, never an upsert
 
 The chronicle is a record, and the imported rows become the only copy of those Faxings. An
 upsert would let a re-run clobber a Faxepave's correction (a misspelt name, a wrong place), and
-the second run would look successful while doing it. Doing nothing on conflict is the safer
-default: re-running is how you confirm the import is complete, not how you refresh it.
+the second run would look successful while doing it. So the seeder reads the chronicle first and
+sends only the events whose id is missing: re-running is how you confirm the import is complete,
+not how you refresh it. The server backs this up, because `faxing_events.id` is the primary key
+and a second insert of an id is refused.
 
 Ids are stable and derived from the event (`legacy-2026-09-18`) and from the contestant's
 position in the record. That keeps a re-run honest for as long as the record's order is
 unchanged; reordering a finished event is a deliberate act that deserves a new id.
+
+### Filed through the API by hand, not by the server at start
+
+The Pi's Postgres listens only inside its compose network, and the deploy key may only run
+`pi-deploy faxing`, so no command can be run against the production database. But the database is
+not the only way in: a Faxepave can already `POST /api/events`. The seeder logs in with the
+Faxepave password and uses that, from any machine that can reach the site.
+
+Filing from `migrate()` at every start was built first and removed. It needed the record bundled
+into `server.cjs`, and because it re-ran unattended it needed a ledger table so that an event a
+Faxepave deleted did not return at the next deploy. That is permanent machinery for five rows
+written once, the same objection this design raises against an import screen. A command run once
+needs neither, and the person running it sees what happened.
+
+What is given up: a rebuilt database does not refill itself; the command is run again. And the
+five requests are not one transaction, so a failure part-way leaves some events filed. That is
+harmless, because the next run files only the ones still missing.
+
+### An event is held back when its day is taken
+
+The production chronicle is older than this record, so an old Faxing may already be in it,
+entered by hand under a random id. A second entry for the same night would be a duplicate nobody
+asked for, and comparing ids cannot see it. The seeder therefore holds an event back while the
+chronicle has any other event on that calendar day in Norway, and names it, so a person decides
+which of the two stays. A day is a blunt match, but two Faxings on one night have not happened,
+and holding back loses nothing. The command writes only with `--write`, so the first run against
+a server is always a look.
 
 ### Titles are transcribed, not recomputed
 
