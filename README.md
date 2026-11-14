@@ -102,6 +102,7 @@ The full path, with the permission table and the schema, is in
 | Shared rooms: join by code, host runs the start and corrections, close into the chronicle | **Built** | `openspec/changes/faxing-rooms` marked complete; commit `3dd4747` |
 | Titles: five crowns and their rules, with the forfeit and late-finish cases | **Built** | `npm run check:rules`, 7 assertions, all passing |
 | The chronicle: archive list, event view, Faxepave-only edits | **Built** | `api/events.ts`, `src/components/History.tsx`, `EventView.tsx` |
+| The old Faxinger: four sessions recorded outside the app, filed from a checked-in record | **Built**, the seeding run not yet done | `docs/legacy-faxinger.md`, `npm run seed:history`, `openspec/changes/legacy-chronicle` |
 | Moonlit night livery: header scene, torches, graveyard footer | **Built, 19 of 23 tasks** | `openspec/changes/moonlit-gothic-livery` |
 | Heraldry livery (`restyle-order-livery`) | **Specified, not built**, 0 of 66 tasks | `openspec/changes/restyle-order-livery`. Whether it still applies after the night livery is open (see below). |
 | Automated tests for the browser flows | **None** | nothing in the repo. Verification is by walking the interface. |
@@ -175,6 +176,7 @@ npm install                  # once
 npm run dev                  # Vite on 0.0.0.0:5173, with the /api handlers mounted
 npm run typecheck            # tsc for the app and for the server, strict
 npm run check:rules          # the titling rules, as seven assertions under Node
+npm run seed:history         # files the Faxinger from before the app; idempotent, see below
 npm run build                # typecheck app, Vite build to dist/, bundle server.cjs
 npm run build:server         # only the server bundle, from server/index.ts
 npm run preview              # serves dist/ only: no /api, see the note below
@@ -192,6 +194,13 @@ openspec status --change <change-id>         # which artifacts a change still la
 
 `npm run dev -- --host` is not needed: the dev server already listens on every interface
 (`vite.config.ts`).
+
+`npm run seed:history` files the Faxinger that happened before this application existed: the four
+sessions written down in [docs/legacy-faxinger.md](docs/legacy-faxinger.md), encoded in
+`scripts/history/legacy-events.json`. It needs the database, so start the server once first (its
+migration creates the table). It inserts only the events whose id is not in the chronicle yet, so
+running it again changes nothing and never overwrites a correction made by hand. Add
+`-- --dry-run` to validate the record and print what it would file without writing.
 
 ---
 
@@ -232,6 +241,11 @@ api/                          Vercel-style handlers, run unchanged by the Pi ser
 ├── admin.ts                  Faxepave login: sets the session cookie
 ├── _auth.ts                  tokens, hashes, and the Faxepave check (underscore: not a route)
 └── _db.ts                    one Postgres pool per process
+
+scripts/
+├── history/legacy-events.json  the old Faxinger, encoded from docs/legacy-faxinger.md
+└── seed-history.mjs          npm run seed:history: validates the whole record, then inserts
+                              only the events whose id is not in the chronicle yet
 
 server/
 ├── api.ts                    maps the handlers onto plain Node, and creates the schema

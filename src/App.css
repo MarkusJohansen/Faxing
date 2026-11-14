@@ -1569,6 +1569,18 @@
   color: var(--flame-200);
 }
 
+/* The old records' titles (Erkekonge, Kronprins, Prins) have no crown to draw, and the phone
+   layout hides the heder column, so these rows name the title beside the person instead. */
+.results-table .result-recorded-title {
+  flex: none;
+  padding: 0 .4rem;
+  border: 1px solid var(--night-700);
+  font-size: .8rem;
+  letter-spacing: .03em;
+  color: var(--mist-200);
+  white-space: nowrap;
+}
+
 /* ── Faxepave's tools ─────────────────────────────────── */
 .event-admin-toolbar {
   display: flex;
