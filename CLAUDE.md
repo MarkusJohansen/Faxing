@@ -115,72 +115,19 @@ list, with what enforces each, is [ARCHITECTURE.md §9](ARCHITECTURE.md#9-invari
 
 ## Spec first
 
-Behaviour is defined before it is built. `openspec/specs/` is the source of truth for what the
-application does. Where a spec and the code disagree, the spec is right and the code has a
-defect.
+Behaviour is defined before it is built. `openspec/specs/` is the source of truth; where a spec
+and the code disagree, the spec is right and the code has a defect. Full workflow, validator
+rules and the skip test are in [docs/openspec.md](docs/openspec.md).
 
-Five capabilities are specified in `openspec/specs/`: `contestant-roster`, `contest-clock`,
-`title-award`, `arena-board`, and `session-persistence`. The last one describes the single-device
-version and is now partly out of date; `openspec/changes/faxing-rooms/specs/session-persistence`
-is the delta that started to replace it. Reconciling the two is open work.
+Any change that alters observable behaviour gets a spec in `openspec/changes/<id>/` first. A
+one-off (a typo, a comment, a dependency bump) skips it; say in one line that you skipped it and
+why that is safe.
 
-### Workflow
+## Style
 
-A change lives in `openspec/changes/<id>/`: a proposal, delta specs under
-`specs/<capability>/spec.md` written as ADDED / MODIFIED / REMOVED requirements with scenarios,
-a design, and a task list.
-
-```bash
-openspec validate --specs --strict        # the five main specs
-openspec validate <change-id> --strict    # one change
-openspec status --change <change-id>      # which artifacts are still missing
-openspec list                             # open changes
-```
-
-Two validator behaviours that cost time:
-
-- A requirement's `SHALL` or `MUST` must be on the **line immediately after** the
-  `### Requirement:` header.
-- Scenarios need **exactly four** hashes (`####`). Three fails silently.
-
-### When to skip the spec
-
-Skip it for a one-off: a typo, a comment, a dependency bump, an obvious bug with one correct
-behaviour. **Say in one line that you skipped it and why that is safe.**
-
-Spec it when the change alters observable behaviour, touches a capability's contract, has more
-than one reasonable design, or spans more than a couple of files. A visual change is observable
-behaviour too.
-
-### Findings
-
-When a change produces a measurement or a failed experiment, record it in the change's
-`findings.md` as it happens, including the results that killed the idea.
-
-## Style, as this codebase writes it
-
-- **The interface speaks old-fashioned Norwegian.** Strings such as `Kriger`, `Innskriv` and
-  `Ærens Hal` are the product's voice. Keep the register. Do not add English strings to the
-  interface. If you cannot write new copy in that register, leave a marker and say so.
-- **Code, comments, commit messages and documentation are in English.**
-- **Comments justify decisions.** The useful comment says why: why 500 ms and not 1000, why
-  the forfeit branch is first, why the room is locked with `FOR UPDATE`. A comment that restates
-  the code is noise.
-- **Name the failure when it is silent.** If you add a guard, say what silent failure it
-  catches.
-- **Components present; the rules live in `lib/`.** `App.tsx` owns screen state and the clock.
-  `ranking.ts` owns the titles. Components take props and render. Add state to a component only
-  when nothing outside it can observe that state, such as the search query.
-- **`useCallback` for handlers passed down, and `setX(prev => …)` for every update.**
-- **Named constants.** `CONTEST_DURATION_MS` and `POLL_MS` are declared once. Do not inline a
-  duration, threshold, or count.
-- **Colours go through a custom property** in `src/index.css`. A hex literal in a component rule
-  breaks the seam that makes the livery replaceable.
-- **TypeScript is strict** (`noUnusedLocals`, `noUnusedParameters`). Do not widen a type to get
-  past an error, and do not use `as` to assert a shape you have not checked. `src/lib/storage.ts`
-  does this today; it is a known defect, not a pattern to copy.
-- **Server errors are actionable Norwegian messages** (`Et Navn er fornødent`), raised as
-  `HttpError` with a status code.
+Interface copy is old-fashioned Norwegian and stays that way; code and docs are English. The
+habits (comments say why, named constants, `useCallback`, strict TypeScript) are in
+[docs/style.md](docs/style.md).
 
 ## Testing
 
