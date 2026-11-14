@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ArchivedContestant, FaxingEvent, RecordedTitle } from '../types'
 import { newId } from '../lib/id'
-import { renamed } from '../lib/people'
+import { canonicalName, personKey } from '../lib/people'
+import { honoursOf, type Honour } from '../lib/honours'
 import { formatDate, formatTime } from '../lib/format'
+import HonourMark from './HonourMark'
 
 interface Props {
   event: FaxingEvent
+  /** The whole chronicle: a past champion is someone who won at an earlier official Faxing. */
+  events: FaxingEvent[]
   isAdmin: boolean
   onBack?: () => void
   onSave: (event: FaxingEvent) => Promise<void>
@@ -21,10 +25,12 @@ const isLegacyTitle = (title: RecordedTitle | null): title is 'Erkekonge' | 'Kro
 /** A recorded time or a title is evidence enough to count as finished, even with no instant. */
 const hasFinished = (contestant: ArchivedContestant) => !contestant.disqualified && (contestant.finishedAt !== null || contestant.elapsed !== null || contestant.title !== null)
 
-export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
+export default function EventView({ event, events, isAdmin, onSave, onDelete }: Props) {
   const [draft, setDraft] = useState(() => ({ ...event, contestants: Array.isArray(event.contestants) ? event.contestants : [] }))
   const [saving, setSaving] = useState(false)
   useEffect(() => { setDraft({ ...event, contestants: Array.isArray(event.contestants) ? event.contestants : [] }) }, [event])
+  // As of this Faxing's date, so editing the date in the Faxepave's form moves the marks with it.
+  const honours = useMemo(() => honoursOf(events, draft.date), [events, draft.date])
   const [newName, setNewName] = useState('')
   const [newGender, setNewGender] = useState<'male' | 'female' | 'other'>('male')
   const [newMinutes, setNewMinutes] = useState('')
@@ -48,7 +54,7 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
   }
 
   const update = (id: string, patch: Partial<ArchivedContestant>) => {
-    setDraft(value => ({ ...value, contestants: value.contestants.map(contestant => contestant.id !== id ? contestant : patch.name !== undefined ? { ...renamed(contestant, patch.name), ...patch } : { ...contestant, ...patch }) }))
+    setDraft(value => ({ ...value, contestants: value.contestants.map(contestant => contestant.id === id ? { ...contestant, ...patch } : contestant) }))
     setSavedMessage('')
   }
 
@@ -142,12 +148,12 @@ export default function EventView({ event, isAdmin, onSave, onDelete }: Props) {
       )}
 
       <div className="result-toolbar"><span>Resultater</span><span className="result-count">{sorted.length} deltagere</span></div>
-      <div className="results-table" role="table" aria-label={`Resultater for ${draft.name}`}><div className="results-table-head" role="row"><span>Plass</span><span>Deltager</span><span>Drikketid</span><span aria-label="Heder" /></div>{sorted.map((contestant, index) => <ResultRow key={contestant.id} contestant={contestant} index={index} isAdmin={canEdit} onUpdate={update} />)}</div>
+      <div className="results-table" role="table" aria-label={`Resultater for ${draft.name}`}><div className="results-table-head" role="row"><span>Plass</span><span>Deltager</span><span>Drikketid</span><span aria-label="Heder" /></div>{sorted.map((contestant, index) => <ResultRow key={contestant.id} contestant={contestant} honour={honours.get(personKey(contestant))} index={index} isAdmin={canEdit} onUpdate={update} />)}</div>
       {canEdit && <div className="admin-actions"><button className="medieval-btn" onClick={save} disabled={saving}>{saving ? 'Lagrer…' : 'Lagre alle endringer'}</button><button className="medieval-btn" type="button" onClick={() => { setIsEditing(false); setDraft({ ...event, contestants: Array.isArray(event.contestants) ? event.contestants : [] }) }}>Avbryt</button>{savedMessage && <span className="save-message" role="status">{savedMessage}</span>}<button className="medieval-btn danger-btn" type="button" onClick={() => { if (window.confirm('Er I visse? Faxingen og alle dens deltagere slettes for alltid.')) onDelete(draft.id) }}>Slett Faxing</button></div>}
     </div>
   )
 }
 
-function ResultRow({ contestant: c, index, isAdmin, onUpdate }: { contestant: ArchivedContestant; index: number; isAdmin: boolean; onUpdate: (id: string, patch: Partial<ArchivedContestant>) => void }) {
-  return <div className={`result-row ${c.title === 'Faxekonge' || c.title === 'Faxedronning' ? 'royal-result' : ''}`} role="row"><span className="result-rank" role="cell">{index + 1}</span><span className="result-person" role="cell">{isAdmin ? <input aria-label={`Navn på deltager ${index + 1}`} className="medieval-input admin-name-input" value={c.name} onChange={event => onUpdate(c.id, { name: event.target.value })} /> : <span className="result-name">{c.name}</span>}{isLegacyTitle(c.title) && <span className="result-recorded-title">{c.title}</span>}{isAdmin && <select aria-label={`Status for ${c.name}`} className="medieval-input admin-status" value={c.disqualified ? 'out' : hasFinished(c) ? 'done' : 'active'} onChange={event => onUpdate(c.id, event.target.value === 'out' ? { disqualified: true, finishedAt: null } : event.target.value === 'done' ? { disqualified: false, finishedAt: c.finishedAt ?? Date.now() } : { disqualified: false, finishedAt: null })}><option value="done">Fullbragt</option><option value="active">Ikke fullbragt</option><option value="out">Hestemann</option></select>}</span><strong role="cell" className={c.title === 'Hestemann' || c.disqualified ? 'result-time result-shame' : 'result-time'}>{c.title === 'Hestemann' || c.disqualified ? 'Hestemann' : formatDuration(c.elapsed)}</strong><span role="cell" className="result-title">{c.title === 'Faxekonge' || c.title === 'Faxedronning' ? <span className="royal-crown" aria-label={c.title} title={c.title}>♛</span> : '—'}</span></div>
+function ResultRow({ contestant: c, honour, index, isAdmin, onUpdate }: { contestant: ArchivedContestant; honour: Honour | undefined; index: number; isAdmin: boolean; onUpdate: (id: string, patch: Partial<ArchivedContestant>) => void }) {
+  return <div className={`result-row ${c.title === 'Faxekonge' || c.title === 'Faxedronning' ? 'royal-result' : ''} ${honour ? `honoured honoured-${honour}` : ''}`} role="row"><span className="result-rank" role="cell">{index + 1}</span><span className="result-person" role="cell">{isAdmin ? <input aria-label={`Navn på deltager ${index + 1}`} className="medieval-input admin-name-input" value={c.name} onChange={event => onUpdate(c.id, { name: event.target.value })} /> : <><span className="result-name">{canonicalName(c.name)}</span>{canonicalName(c.name) !== c.name.trim() && <span className="result-written">skrevet «{c.name}»</span>}</>}{isLegacyTitle(c.title) && <span className="result-recorded-title">{c.title}</span>}<HonourMark honour={honour} />{isAdmin &&<select aria-label={`Status for ${c.name}`} className="medieval-input admin-status" value={c.disqualified ? 'out' : hasFinished(c) ? 'done' : 'active'} onChange={event => onUpdate(c.id, event.target.value === 'out' ? { disqualified: true, finishedAt: null } : event.target.value === 'done' ? { disqualified: false, finishedAt: c.finishedAt ?? Date.now() } : { disqualified: false, finishedAt: null })}><option value="done">Fullbragt</option><option value="active">Ikke fullbragt</option><option value="out">Hestemann</option></select>}</span><strong role="cell" className={c.title === 'Hestemann' || c.disqualified ? 'result-time result-shame' : 'result-time'}>{c.title === 'Hestemann' || c.disqualified ? 'Hestemann' : formatDuration(c.elapsed)}</strong><span role="cell" className="result-title">{c.title === 'Faxekonge' || c.title === 'Faxedronning' ? <span className="royal-crown" aria-label={c.title} title={c.title}>♛</span> : '—'}</span></div>
 }

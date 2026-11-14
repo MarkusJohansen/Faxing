@@ -3,11 +3,8 @@ import type { FaxingEvent, Gender, RoomSnapshot } from '../types'
 import type { ActionExtra, RoomAction } from '../lib/rooms'
 import { peopleOf, suggest, type Suggestion } from '../lib/suggest'
 import { personKey } from '../lib/people'
-import { honoursOf, HONOUR_GLYPH, LORE_NAMES, HONOUR_LABEL, type Honour } from '../lib/honours'
-
-/** The mark of an honoured person: a glyph and a word, so colour is not the only signal. */
-const HonourMark = ({ honour }: { honour: Honour | undefined }) =>
-  honour ? <span className={`honour-mark honour-${honour}`} title={HONOUR_LABEL[honour]}><span aria-hidden="true">{HONOUR_GLYPH[honour]}</span> {HONOUR_LABEL[honour]}</span> : null
+import { honoursOf, LORE_NAMES } from '../lib/honours'
+import HonourMark from './HonourMark'
 
 interface Props {
   room: RoomSnapshot

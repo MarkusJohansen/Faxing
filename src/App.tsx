@@ -86,7 +86,7 @@ export default function App() {
         {room && room.startedAt !== null && <Arena title={room.title} code={room.code} rankedContestants={ranked} contestStartTime={room.startedAt} now={roomNow} durationMs={CONTEST_DURATION_MS} you={room.you} onAct={act} />}
       </>}
       {screen === 'history' && <History events={events} onOpen={event => { setActiveEventId(event.id); setScreen('event') }} onCreate={addPastEvent} isAdmin={isAdmin} />}
-      {screen === 'event' && !activeEvent ? <section className="event-loading scroll-panel"><p className="eyebrow">Faxe Ordenens arkiv</p><h2 className="panel-title">Henter Faxing…</h2><button className="back-link" onClick={() => setScreen('history')}>Tilbake til krøniken</button></section> : screen === 'event' && activeEvent && <EventErrorBoundary><EventView event={activeEvent} isAdmin={isAdmin} onBack={() => navigate('history')} onSave={saveAdminEvent} onDelete={removeAdminEvent} /></EventErrorBoundary>}
+      {screen === 'event' && !activeEvent ? <section className="event-loading scroll-panel"><p className="eyebrow">Faxe Ordenens arkiv</p><h2 className="panel-title">Henter Faxing…</h2><button className="back-link" onClick={() => setScreen('history')}>Tilbake til krøniken</button></section> : screen === 'event' && activeEvent && <EventErrorBoundary><EventView event={activeEvent} events={events} isAdmin={isAdmin} onBack={() => navigate('history')} onSave={saveAdminEvent} onDelete={removeAdminEvent} /></EventErrorBoundary>}
       {screen === 'lore' && <Lore />}
     </main>
     <footer className="app-footer"><GraveScene /><p>Faxe Ordenens offisielle arkiv · Brygget med ære</p><p className="moderation-notice">Drikk med måte, og pass på hverandre.</p></footer>

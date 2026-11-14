@@ -1,18 +1,16 @@
 ## Why
 
-Recurring attendants type themselves in at every Faxing, and they type differently: "Arne",
-"arne h", "Arne Hildrum". The chronicle then holds several names for one person, and the
-`person-identity` change can only repair that afterwards. Offering the names already in the
-chronicle while someone types stops the split where it starts.
+Recurring attendants type themselves in at every Faxing, and they type differently: "Tora",
+"tora p", "Tora Prøvesen". The chronicle then holds several names for one person. Offering the
+names already in the chronicle while someone types stops the split where it starts.
 
 ## What Changes
 
 - **Suggestions while typing**: the lobby's name field lists up to five people from the chronicle
-  whose name resembles what has been typed, tolerating a missed letter, a swapped letter, a
-  missing æøå and a half-typed name.
+  whose name resembles what has been typed, tolerating a slipped letter, a missing æøå and a
+  half-typed name.
 - **Choosing one fills in the person**: their full name and the gender last recorded for them. Both
-  stay editable. The stored name is then the full name, so the existing person key
-  (`chronicle-people`) joins the entries with no new field.
+  stay editable. The stored name is then the full name, so the person key joins the entries.
 - **Nothing is forced**: a new name is still accepted as typed, and a suggestion already in this
   room is shown as taken.
 

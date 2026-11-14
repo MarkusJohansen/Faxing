@@ -1,8 +1,9 @@
 ## 1. The key
-- [x] 1.1 `personId?` on `ArchivedContestant`
-- [x] 1.2 `src/lib/people.ts`: `nameKey`, `personKey`, `countPeople`; `people.demo.ts` in `check:rules`
+- [x] 1.1 `src/lib/people.ts`: `nameKey`, `canonicalName`, `personKey`, `countPeople`
+- [x] 1.2 `src/data/people.json`: the alias record, as data
+- [x] 1.3 `src/lib/people.demo.ts` in `check:rules`, with made-up names
 
-## 2. The correction
-- [x] 2.1 `scripts/history/people.json`: alias → full name
-- [x] 2.2 `scripts/link-people.ts` and `npm run link:people`: plan, then `--write`
-- [ ] 2.3 Run against the live server and record the people count before and after
+## 2. The screens
+- [x] 2.1 Home count is people
+- [x] 2.2 Results page shows the full name and the written spelling
+- [ ] 2.3 Walk a results page at phone and desktop width

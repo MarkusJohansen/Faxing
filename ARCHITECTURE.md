@@ -217,12 +217,16 @@ the intended power of the operator, and it is also the only place a title can be
 ### Who is who
 
 A chronicle entry is a name. Which entries are one person is decided by `personKey()` in
-`src/lib/people.ts`: the entry's `personId` if it has one, otherwise its name trimmed and
-lower-cased. `personId` is stored in the `attendees` jsonb and is set by `npm run link:people` from
-`scripts/history/people.json`, for entries the record wrote by first name only; renaming an entry
-drops it. The home screen counts people this way, the lobby offers them as suggestions
-(`src/lib/suggest.ts`), and `src/lib/honours.ts` marks past champions (a crown at an official
-Faxing, derived from the chronicle) and the lore's pope and saints (a short table).
+`src/lib/people.ts`: the entry's name trimmed and lower-cased, after `src/data/people.json` has
+replaced a first name, a typo or an older spelling by the full name it stands for. The data file is
+read when the chronicle is read and nothing is written back, so a stored event is never rewritten and
+no source file names a person; the checks use made-up names. The home screen counts people this way,
+a results page shows the full name with the written spelling beside it ("skrevet «…»"), the lobby
+offers people as suggestions (`src/lib/suggest.ts`), and `src/lib/honours.ts` marks past champions
+(a crown at an official Faxing, derived from the chronicle) and the lore's pope and saints (named in
+the same data file). Honours are worked out *as of a date*: a results page marks someone a champion
+only for a Faxing held strictly after the one they won, while the pope and the saints show on every
+page.
 
 ## 6. Persistence and the database
 

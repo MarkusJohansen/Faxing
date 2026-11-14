@@ -1,0 +1,31 @@
+{
+  "about": "Who is who in the chronicle, kept here as data so that no source file names a person. 'aliases' maps a name as the old records wrote it (a first name only, a typo, an older spelling) to the full name of the person it is; keys compare case-insensitively. 'honours' gives the order's lore a standing that no Faxing records: 'saint' or 'pope', by full name. Left out of 'aliases' on purpose until someone decides who they are: William, Henrik, Kasper, Eirik, Erik, Kristian, Magnus byrkj, Sofie.",
+  "aliases": {
+    "Andrej": "Andrej Lazic",
+    "Arne": "Arne Hildrum",
+    "Daniel": "Daniel Evensen",
+    "Live": "Live Dyrland",
+    "Mathea": "Mathea Kalley",
+    "Marius": "Marius Brun",
+    "Martin": "Martin Rustad",
+    "Ola": "Ola Vassbotn",
+    "Peter": "Peter Johnsen",
+    "Sander": "Sander Rom Skofsrud",
+    "Johannes": "Johannes Koren Hage",
+    "Jennings": "Scott Jennings",
+    "Magnus": "Magnus Strømseng",
+    "Willy": "William Fagerstrøm",
+    "Toby": "Tobi Haugrønning",
+    "Tobias": "Tobi Haugrønning",
+    "Ådne svendsrrud": "Ådne Svendstrud",
+    "Sivert vårum": "Sivert Vårum",
+    "Markus": "Markus Johansen",
+    "Are Tommerås": "Are Tømmerås"
+  },
+  "honours": {
+    "Markus Johansen": "saint",
+    "William Fagerstrøm": "saint",
+    "Are Tømmerås": "saint",
+    "Gleb Rychkov": "pope"
+  }
+}

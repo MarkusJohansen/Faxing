@@ -176,7 +176,6 @@ npm install                  # once
 npm run dev                  # Vite on 0.0.0.0:5173, with the /api handlers mounted
 npm run typecheck            # tsc for the app and for the server, strict
 npm run check:rules          # the demos in src/lib (titling, tribute, people, suggestions, honours), under Node
-npm run link:people          # links first-name-only chronicle entries to their person, by hand; see below
 npm run seed:history         # files the old Faxinger into a running server, by hand; see below
 npm run build                # typecheck app, Vite build to dist/, bundle server.cjs
 npm run build:server         # only the server bundle, from server/index.ts
@@ -255,8 +254,6 @@ api/                          Vercel-style handlers, run unchanged by the Pi ser
 
 scripts/
 ├── history/legacy-events.json  the old Faxinger, encoded from docs/legacy-faxinger.md
-├── history/people.json       first-name-only entries and typos, mapped to the full name
-├── link-people.ts            npm run link:people: sets personId on those entries
 └── seed-history.ts           npm run seed:history: validates the record, then files the
                               missing events through POST /api/events
 
