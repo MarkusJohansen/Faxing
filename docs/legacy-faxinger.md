@@ -285,7 +285,9 @@ council as **Kong Markus I**. The Lore tells the same night (`src/components/Lor
 **Encoded as** `legacy-2022-10-29`, official: Markus Johansen `Faxekonge` at 15:00, and the three
 elders who were at the table with him, Njål Sørland, Ivar Hembre and Magne Slaatsveen, with no
 time. The Council names them as Fyrst Njål, Hertug Ivar and Grev Magne; the encoding keeps the
-names the record gives, not the titles the Lore gave them later.
+names the record gives, not the titles the Lore gave them later. Every one of the three carries
+the order's `Helgen` mark, because Konsilet på A4 made Eldsterådet saints; that mark is lore, so
+it is filed in `src/data/people.json` and not in the row.
 
 The record states fifteen minutes, not a clock time, so the encoding stores the duration and
 leaves `finishedAt` empty, as every row here does. It is the older of the two rows from before
@@ -302,8 +304,9 @@ was founded and he handed the crown on rather than keep it (`src/components/Lore
 chapter «Gjenfødelsen»).
 
 **Encoded as** `legacy-2024-09-30`, official: William Fagerstrøm `Faxekonge`, and the six who
-faxed with him — Markus Johansen, Henrik Moe Wæhre, Are Tœmmerås, Erik David Thiis-Evensen,
-Hallvard Vatnar Olsen and Lars Tangen Hestnes — every one of them with no time.
+faxed with him — Markus Johansen, Henrik Moe Wæhre, Are Tømmerås, Erik David Thiis-Evensen,
+Hallvard Vatnar Olsen and Lars Tangen Hestnes — every one of them with no time. Are is the «Jarl
+Are» the Lore canonised with the elders, so he too carries the `Helgen` mark.
 
 The Lore states «under 10 minutter» — a bound, not a time — so no duration is stored and the
 row reads `Tid ukjent` for all seven. Seven faxed that night, which is what the row holds: the
