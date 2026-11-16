@@ -98,7 +98,7 @@ on the client is a second source of truth.
 `rankContestants()` in `src/lib/ranking.ts:10` is the only place a title is decided. It is
 pure, takes the roster, the start instant, `now` and the duration, and returns ranked
 contestants. It is called on the client for display (`src/App.tsx:83`) and on the server when a
-room closes (`api/rooms.ts:121`).
+room closes (`api/rooms.ts:128`).
 
 The five titles are defined in `src/types.ts`:
 
@@ -151,8 +151,8 @@ create ─► lobby ─► start ─► running ─► close ─► loft ─► 
 ### Who may do what
 
 Every write goes through `POST /api/rooms` with an `action` field. The router is one handler,
-`api/rooms.ts`, so the permission checks live in one place. `act()` (`api/rooms.ts:132`)
-applies the action under a row lock (`FOR UPDATE`, `api/rooms.ts:245`), so two taps in the
+`api/rooms.ts`, so the permission checks live in one place. `act()` (`api/rooms.ts:189`)
+applies the action under a row lock (`FOR UPDATE`, `api/rooms.ts:305`), so two taps in the
 same room apply one after another rather than interleaving.
 
 | Action | Who | Condition | Effect |
@@ -167,21 +167,42 @@ same room apply one after another rather than interleaving.
 | `set-finished` | host | running (`:192-197`) | stamps a finish at the server's now |
 | `set-time` | host | `0 ≤ elapsed < hour` (`:201-205`) | stamps a finish at a typed time |
 | `disqualify` | host | after start | sets `disqualified`, **clears `finished_at`** (`:212`) |
-| `close` | host | the lobby or the running board | a started contest derives titles, files the Faxing for the Faxepave's word (`status = 'pending'`) and closes the room (`:111-128`); a room that never began is only marked closed (`:113`) |
+| `close` | host | the lobby or the running board | a started contest derives titles, files the Faxing for the Faxepave's word (`status = 'pending'`) and closes the room (`:118-135`); a room that never began is only marked closed (`:120`) |
 
 A room closed before its start is **dissolved**: `closed_at` is set, and no chronicle event and no
 title are written, because no finish was ever recorded. It leaves the list of rooms in progress,
 and every device in its lobby moves to a screen that says so (`src/App.tsx:127`) instead of a lobby
 whose every action would be refused. Nothing is deleted: the room and its member rows stay.
 
+### When nobody closes the room
+
+A room whose host raised it and walked away has no way out of its own: `close` needs the host
+(`api/rooms.ts:189`), and the Faxepave is a host only on an official room (`:66`). So the server
+reaps them. `reapAbandonedRooms` (`:163`) runs from the `GET` branch, before the list or the
+snapshot answers, at most once every fifteen seconds per process (`sweepIfDue`, `:182`).
+
+Two absolute instants decide, never the time since the last request:
+
+- **A started room whose hour is out** is closed through the host's own `closeRoom`, so its Faxing
+  lands on the loft `pending` with every recorded finish and the titles those instants earn.
+- **A room that never began** is dissolved once 24 hours have passed since the later of its
+  creation and its last join (`ABANDONED_ROOM_MS`, `src/lib/contest.ts:9`): `closed_at` only, no
+  chronicle entry, the branch `dissolve-unstarted-room` added.
+
+A contest **inside** its hour is never reaped, however quiet it has gone: for an hour the only
+writes in a healthy room are finishes, so an idle timeout shorter than the hour would close a live
+contest and freeze it. A sweep that fails logs and leaves the room open for the next window, and
+`closed_at` is re-checked under `FOR UPDATE` (`:169`), so the host and the reaper cannot both
+chronicle one room.
+
 A "host" is a device holding the host token, **or** a Faxepave session on an official room
-(`api/rooms.ts:60`). A member is a device holding a participant token. A device can hold both,
+(`api/rooms.ts:66`). A member is a device holding a participant token. A device can hold both,
 because the host is usually drinking too; the header carries up to two tokens
 (`api/_auth.ts:23-26`).
 
 ### Why the server stamps every instant
 
-`start`, `finish` and `set-finished` use `Date.now()` on the server (`api/rooms.ts:243`), not
+`start`, `finish` and `set-finished` use `Date.now()` on the server (`api/rooms.ts:307`), not
 the phone's clock. A phone that is wrong, or sleeping, cannot move a finish. The clients
 compare against `serverNow` (see [§2](#2-client-state)). The cost is that the finish is
 recorded when the request reaches the Pi, not when the can is empty; over a home network that
@@ -210,16 +231,17 @@ code. Losing the token means losing the role, not the contest: the state lives o
 
 ## 5. The chronicle
 
-`closeRoom` (`api/rooms.ts:111`) is the only place a title is written to the database. A room
-closed before its start never gets here: it is dissolved with no chronicle entry (§4).
+`closeRoom` (`api/rooms.ts:118`) is the only place a title is written to the database. A room
+closed before its start never gets here: it is dissolved with no chronicle entry (§4). Every close
+enters here, the host's and the reaper's: one close, not two.
 
 1. It ranks the members with `rankContestants`, using `now = max(now, start + hour)`
-   (`api/rooms.ts:121`). Closing early therefore ranks as if the hour had run out: anybody
+   (`api/rooms.ts:128`). Closing early therefore ranks as if the hour had run out: anybody
    still drinking becomes a `Hestemann`.
 2. It inserts a `faxing_events` row whose `attendees` is the ranked list, **titles included**,
-   with `status = 'pending'` (`:127`). The close is a proposal; the record itself is complete
+   with `status = 'pending'` (`:134`). The close is a proposal; the record itself is complete
    from this moment.
-3. It sets `closed_at` and `event_id` on the room (`:128`). Every other device sees `eventId`
+3. It sets `closed_at` and `event_id` on the room (`:135`). Every other device sees `eventId`
    on its next poll and moves to the archived event (`src/App.tsx:71-79`).
 
 This is a deliberate exception to "titles are derived". Once a contest is closed the record is
@@ -284,7 +306,7 @@ Two constraints do real work:
 
 - **`UNIQUE (room_id, lower(name))`** (`server/api.ts:89`). This is the duplicate-name check, so
   two people typing the same name in the same second cannot both get in. The `23505` error is
-  turned into a 409 at `api/rooms.ts:53`.
+  turned into a 409 at `api/rooms.ts:59`.
 - **`ON DELETE CASCADE`** on members (`server/api.ts:75`). Deleting a room removes its members.
 
 **What lives on the device:** only the room tokens (`localStorage`, `src/lib/rooms.ts:10`), the
@@ -341,14 +363,14 @@ down. "Enforced by" names what would catch a break.
 
 1. **No title is computed from stored data, except the chronicle.** Titles come from
    `rankContestants()`. The one stored set is `faxing_events.attendees` at close
-   (`api/rooms.ts:127`), and it is frozen by design. *Enforced by:* `check:rules` for the
+   (`api/rooms.ts:134`), and it is frozen by design. *Enforced by:* `check:rules` for the
    function; nothing for the freeze.
 2. **Every duration is a difference of two absolute instants.** Nothing accumulates. *Enforced
    by:* the derivation in `src/App.tsx:82-83` and `ranking.ts`, and `check:rules`'s expiry cases.
    A counter would stop when the tab slept and report an expired contest as open.
 3. **A recorded `finished_at` changes only through a host correction or a participant's own
    first tap.** Participant `finish` and `forfeit` are guarded by
-   `WHERE finished_at IS NULL AND NOT disqualified` (`api/rooms.ts:163`), so a second tap
+   `WHERE finished_at IS NULL AND NOT disqualified` (`api/rooms.ts:220`), so a second tap
    changes nothing. Host actions `reset`, `set-finished`, `set-time` and `disqualify` may
    overwrite it, and `disqualify` clears it. *Enforced by:* the SQL guard, the host check in
    `act()`, and the confirmation in `src/components/ContestantCard.tsx:38` before a host clears a finish.
@@ -357,14 +379,14 @@ down. "Enforced by" names what would catch a break.
 5. **A finish at or after the hour is never a finish.** `finishedInTime` is strict
    (`src/lib/ranking.ts:14`). *Enforced by:* `check:rules`, cases "a finish after the hour earns no
    title" and "a late finish cannot claim a vacant crown". Server side, `set-finished` refuses
-   a late finish (`api/rooms.ts:197`).
+   a late finish (`api/rooms.ts:254`).
 6. **Ranks and titles are computed over the whole roster, never the filtered view.** *Enforced
    by:* `src/components/Arena.tsx:20`, which builds the rank map from `rankedContestants`, not `filtered`.
 7. **A closed room accepts no action.** `act()` fails with 409 when `closed_at` is set
-   (`api/rooms.ts:133`).
+   (`api/rooms.ts:190`).
 8. **Only the server's clock decides a finish.** The client sends an action, not an instant
    (except `set-time`, which the host types, bounded by `elapsedMs < hour`). *Enforced by:* the
-   `now` in `handler` (`api/rooms.ts:247`).
+   `now` in `handler` (`api/rooms.ts:307`).
 9. **Nothing leaves the device except to our own server.** The only outbound requests are
    `/api/*` on the same origin and the Google Fonts stylesheet in `index.html`. *Enforced by:*
    a search for `fetch(`, `XMLHttpRequest` and `WebSocket` in `src/`, which finds calls only in
@@ -373,14 +395,23 @@ down. "Enforced by" names what would catch a break.
     `localStorage` error (`src/lib/rooms.ts:18-42`). *Enforced by:* the try/catch, reviewed by
     reading only.
 11. **A participant may mark only themselves.** `finish` and `forfeit` reject any `memberId`
-    other than the caller's (`api/rooms.ts:159-160`). Host targets must belong to the same room
-    (`:140-143`).
+    other than the caller's (`api/rooms.ts:216-217`). Host targets must belong to the same room
+    (`:197-200`).
 12. **The chronicle lists only Faxinger the Faxepave has accepted, and a decision never edits
     the record.** `GET /api/events` defaults to `status = 'published'`, `PATCH` accepts only
     `published` or `denied`, and `PUT` does not touch `status` (`api/events.ts:21-63`). Both
     halves fail silently if broken: a leaked `pending` row would be counted and crowned, and an
     approval that rewrote `attendees` would change a finish after the fact. *Enforced by:* the
     SQL in `api/events.ts` and the 401 on the queue; nothing automated.
+13. **An automatic close is a host's close.** `reapAbandonedRooms` calls `closeRoom`
+    (`api/rooms.ts:163`), never a bare `UPDATE … SET closed_at`, so a room the reaper ends keeps
+    every finish it recorded and files the Faxing a host would have filed. A sweep that wrote
+    `closed_at` directly would freeze a contest into nothing and report no error. *Enforced by:*
+    reading; `grep -rn "UPDATE faxing_rooms SET closed_at" api` shows both statements inside
+    `closeRoom`.
+14. **Nothing is reaped inside the hour.** The idle horizon (`ABANDONED_ROOM_MS`) is longer than
+    the hour, and a contest in progress is silent, so a rule that keyed on quiet would close live
+    Faxinger. *Enforced by:* `check:rules`, case "the abandonment horizon lies beyond the hour".
 
 ## 10. Known defects
 
@@ -448,7 +479,7 @@ in `openspec/changes/faxing-rooms/design.md`: the host is trusted, and the chron
 the result, not the history.
 
 **Joining after the start.** Once the clock runs, the roster is frozen for participants.
-The host can add a latecomer (`api/rooms.ts:175-183`), but that person is measured from the common
+The host can add a latecomer (`api/rooms.ts:232-240`), but that person is measured from the common
 start, which is what the rule requires.
 
 **A pause.** The clock is derived from one start instant, so there is nothing to stop. A pause
@@ -469,7 +500,7 @@ gap, since the browser flows have no tests at all.
 `openspec/specs/title-award/` first, then change the branch, then add a case to
 `ranking.demo.ts` that would have failed before.
 
-**A new room action** attaches in `act()` in `api/rooms.ts:132`, in the `switch`, and in the
+**A new room action** attaches in `act()` in `api/rooms.ts:189`, in the `switch`, and in the
 client's `RoomAction` type (`src/lib/rooms.ts:4`). Decide first which role may use it, and
 write that check before the effect.
 

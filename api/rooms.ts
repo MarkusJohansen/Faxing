@@ -3,7 +3,7 @@ import { randomInt, randomUUID } from 'node:crypto'
 import type { Pool, PoolClient } from 'pg'
 import { hashToken, isFaxepave, newToken, requestTokens } from './_auth'
 import { pool } from './_db'
-import { CONTEST_DURATION_MS } from '../src/lib/contest'
+import { ABANDONED_ROOM_MS, CONTEST_DURATION_MS } from '../src/lib/contest'
 import { rankContestants } from '../src/lib/ranking'
 import type { Contestant, Gender, RoomRole, RoomSnapshot, RoomSummary } from '../src/types'
 
@@ -14,9 +14,15 @@ const CODE_ATTEMPTS = 10
 const NAME_MAX = 30
 const TITLE_MAX = 80
 const LISTED_ROOMS = 50
+// A poll from every phone every two seconds must not each run a scan of the open rooms. Skipping
+// a sweep is safe: it only delays a close to the next window, and closing is idempotent.
+const SWEEP_EVERY_MS = 15_000
+let lastSweep = 0
 
 type Db = Pool | PoolClient
 interface RoomRow { id: string; code: string; title: string; official: boolean; host_token_hash: string; started_at: Date | null; closed_at: Date | null; event_id: string | null }
+// The reaper needs the room's age, which no other read asks for, so it selects one column more.
+interface OpenRoomRow extends RoomRow { created_at: Date }
 interface MemberRow { id: string; name: string; gender: string; finished_at: Date | null; disqualified: boolean }
 type Body = Record<string, unknown>
 
@@ -106,7 +112,8 @@ async function createRoom(db: Db, req: VercelRequest, body: Body) {
 /**
  * Closes a room. A started contest is ranked from its recorded instants and frozen into the
  * chronicle; a room that never began is only marked closed, because a Faxing with no finish is
- * not history. Does not check the role: every caller is already behind `requireHost()`.
+ * not history. Does not check the role: `close` in `act()` is already behind `requireHost()`, and
+ * the reaper below closes rooms whose host never came back.
  */
 async function closeRoom(db: Db, room: RoomRow, now: number) {
   if (room.started_at === null) {
@@ -126,6 +133,56 @@ async function closeRoom(db: Db, room: RoomRow, now: number) {
   // the row so nothing recorded at close is destroyed.
   await db.query("INSERT INTO faxing_events (id, title, event_date, official, attendees, status) VALUES ($1, $2, $3, $4, $5::jsonb, 'pending')", [eventId, room.title, new Date(begun), room.official, JSON.stringify(ranked)])
   await db.query('UPDATE faxing_rooms SET closed_at = $2, event_id = $3 WHERE id = $1', [room.id, new Date(now), eventId])
+}
+
+/**
+ * True when nobody is coming back to the room. Both triggers are absolute instants, never the time
+ * since the last request: a contest in progress is silent by nature — for an hour the only writes
+ * are finishes — so an idle timeout shorter than the hour would close a live Faxing and freeze it.
+ */
+async function abandoned(db: Db, room: OpenRoomRow, now: number): Promise<boolean> {
+  const begun = room.started_at?.getTime()
+  if (begun !== undefined) return now - begun >= CONTEST_DURATION_MS
+  // A join is the only thing a lobby does, so the later of its creation and its last join is when
+  // someone was last expected. A room raised a day early for tomorrow's party is not deserted.
+  const last = await db.query<{ touched: Date }>('SELECT COALESCE(max(joined_at), $2::timestamptz) AS touched FROM faxing_room_members WHERE room_id = $1', [room.id, room.created_at])
+  return now - last.rows[0].touched.getTime() >= ABANDONED_ROOM_MS
+}
+
+/**
+ * Closes the rooms nobody is coming back to, through the same `closeRoom` a host's own close uses,
+ * so an automatic close files exactly the record a host's would. Runs on read instead of on a
+ * schedule: no cron runs beside the Pi, the phones stuck in an abandoned room are already polling
+ * this endpoint, and a missed sweep only delays the close.
+ *
+ * Best effort. Each room is closed in its own transaction and re-checked under the row lock, so a
+ * room closed by its host a moment earlier is left alone rather than chronicled twice. A room whose
+ * close fails stays open for the next sweep, and the request that triggered it is not failed: the
+ * device did nothing wrong.
+ */
+async function reapAbandonedRooms(db: Pool, now: number) {
+  const open = await db.query<{ id: string }>('SELECT id FROM faxing_rooms WHERE closed_at IS NULL')
+  for (const { id } of open.rows) {
+    const client = await db.connect()
+    try {
+      await client.query('BEGIN')
+      const room = (await client.query<OpenRoomRow>(`SELECT ${ROOM_COLUMNS}, created_at FROM faxing_rooms WHERE id = $1 FOR UPDATE`, [id])).rows[0]
+      if (room && !room.closed_at && await abandoned(client, room, now)) await closeRoom(client, room, now)
+      await client.query('COMMIT')
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined)
+      console.error('[rooms] reap', id, error)
+    } finally {
+      client.release()
+    }
+  }
+}
+
+/** A sweep at most once per window: a poll from every phone must not each scan the open rooms. */
+async function sweepIfDue(db: Pool, now: number) {
+  if (now - lastSweep < SWEEP_EVERY_MS) return
+  lastSweep = now
+  await reapAbandonedRooms(db, now)
 }
 
 /** Applies one action to a locked room. Returns a token when the action issues one. */
@@ -227,6 +284,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!pool) return res.status(503).json({ error: 'Database connection is not configured' })
     const code = typeof req.query.code === 'string' ? req.query.code.trim().toUpperCase() : ''
     if (req.method === 'GET') {
+      // Before either read answers, so a phone polling a room that ended without its host is told so
+      // on this response rather than the next one.
+      await sweepIfDue(pool, Date.now())
       if (!code) return res.status(200).json(await listRooms(pool))
       const room = (await pool.query<RoomRow>(`SELECT ${ROOM_COLUMNS} FROM faxing_rooms WHERE code = $1`, [code])).rows[0]
       if (!room) return res.status(404).json({ error: 'Intet Rom haver denne Kode.' })
