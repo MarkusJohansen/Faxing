@@ -95,9 +95,10 @@ finish are stored as `Hestemann` with `disqualified` true and no time. The headi
 
 ---
 
-## 10 September 2025 — Faxing (official)
+## 10 September 2025 — Det tredje ting (official)
 
-The message's own heading is "Faxing"; no other name is given for the session.
+The message's own heading is "Faxing"; Det tredje ting is the name the organizer's own count gives
+it (see "How the encoding decided" below), and the name the row carries in the archive.
 
 ```
 Faxing
@@ -336,6 +337,7 @@ the list had only a surname or a first name: the organizer supplied `Magnus Oure
 npm run seed:history -- --dry-run                    # validate the record, contact nothing
 npm run seed:history -- https://faxing.example       # show what would be filed there
 FAXEPAVE_PASSWORD=… npm run seed:history -- https://faxing.example --write
+FAXEPAVE_PASSWORD=… npm run seed:history -- https://faxing.example --write --update legacy-2025-09-10
 ```
 
 The command is run once, by hand, against a running server, and files through the Faxepave's
@@ -346,3 +348,9 @@ nothing and never overwrites a correction made in the interface. An event is hel
 chronicle already has another event on the same day: decide which of the two stays, remove the
 other in the interface, and run it again. Nothing runs it automatically, so an event a Faxepave
 deletes stays deleted; running the command again would offer to file it again.
+
+`--update` is the one exception, and it names its events one by one: it rewrites the contestants
+of the rows it is given (`PUT /api/events?id=…`, the API's own address for one row) and prints the
+difference before it does. The row keeps its own title, day and official flag, so a night the
+Faxepave renamed keeps that name, and a contestant the row already holds keeps its id. Every
+other row is still left alone.

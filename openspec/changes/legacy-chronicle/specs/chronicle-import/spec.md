@@ -67,8 +67,9 @@ the record without contacting a server.
 
 ### Requirement: Seeding is additive and repeatable
 The command SHALL validate the whole record before sending anything. It SHALL only add events: it
-SHALL NOT update or delete one. An event whose id is already in the chronicle SHALL be left
-untouched, so a second run changes nothing and a Faxepave's correction is never overwritten.
+SHALL NOT update or delete one, except an event the operator names for update (see the next
+requirement). An event whose id is already in the chronicle SHALL be left untouched, so a second
+run changes nothing and a Faxepave's correction is never overwritten.
 
 An event SHALL be held back while the chronicle holds another event on the same calendar day in
 Norway, and the command SHALL name that event. The chronicle is older than the record, and that
@@ -110,6 +111,40 @@ fail validation.
 #### Scenario: A date that does not exist
 - **WHEN** an encoded date is `2025-02-30`
 - **THEN** validation fails naming that event, instead of filing it under 2 March
+
+### Requirement: A changed row is rewritten only when it is named
+The command SHALL rewrite a filed row only when `--update` names that row's id, and SHALL
+otherwise leave every filed row as it is: a record can be corrected after it was filed, by a
+crown the organizer supplied a day later. It SHALL stop with a message, before contacting a
+server, when `--update` names no ids, and when ids are named without `--update`.
+
+For a named row the command SHALL compare the record's contestants with the filed ones and print
+one line per difference, naming the contestant and both values. With `--write` it SHALL rewrite
+the contestants through `PUT /api/events?id=<id>`. It SHALL NOT send the record's title, day or
+official flag over the row's own: those stay as the chronicle has them, and a difference SHALL be
+reported rather than written. A contestant the row already holds SHALL keep the id the chronicle
+gave it. A named row whose contestants already match SHALL be left alone.
+
+#### Scenario: A crown supplied after the fact
+- **WHEN** the record gives a contestant a title the transcribed row does not have, and that event is
+  named with `--update` and `--write`
+- **THEN** the row's contestants are rewritten, and the title is in the archive
+
+#### Scenario: A night the Faxepave renamed
+- **WHEN** the row's title in the chronicle differs from the record's heading
+- **THEN** the command says so, and the row keeps the chronicle's title
+
+#### Scenario: The default run after a record correction
+- **WHEN** the command runs again without `--update`
+- **THEN** the filed row is left as it is
+
+#### Scenario: `--update` with no ids
+- **WHEN** `--update` is given and no event is named
+- **THEN** the run stops with a message, and no server is contacted
+
+#### Scenario: An id named without `--update`
+- **WHEN** an event id follows the server name and `--update` is absent
+- **THEN** the run stops, rather than treating the id as a second server
 
 ### Requirement: An imported title is transcribed, never derived
 The seeder SHALL store the title the record states for each contestant and SHALL NOT call

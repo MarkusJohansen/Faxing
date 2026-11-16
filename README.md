@@ -104,7 +104,7 @@ The full path, with the permission table and the schema, is in
 | The Faxepave's loft: a closed Faxing waits for the operator's word before it enters the chronicle | **Built** | `api/events.ts` (`status`), `src/components/FaxepaveLoft.tsx`, `openspec/changes/faxepave-loft` |
 | Titles: five crowns and their rules, with the forfeit and late-finish cases | **Built** | `npm run check:rules`, all passing |
 | The chronicle: archive list, event view, Faxepave-only edits | **Built** | `api/events.ts`, `src/components/History.tsx`, `EventView.tsx` |
-| The old Faxinger: five sessions recorded outside the app, filed from a checked-in record | **Built**, not yet filed on the Pi | `docs/legacy-faxinger.md`, `npm run seed:history`, `openspec/changes/legacy-chronicle` |
+| The old Faxinger: seven sessions recorded outside the app, filed from a checked-in record | **Built**, filed on the Pi | `docs/legacy-faxinger.md`, `npm run seed:history`, `openspec/changes/legacy-chronicle` |
 | Moonlit night livery: header scene, torches, graveyard footer | **Built, 19 of 23 tasks** | `openspec/changes/moonlit-gothic-livery` |
 | Heraldry livery (`restyle-order-livery`) | **Specified, not built**, 0 of 66 tasks | `openspec/changes/restyle-order-livery`. Whether it still applies after the night livery is open (see below). |
 | Automated tests for the browser flows | **None** | nothing in the repo. Verification is by walking the interface. |
@@ -197,7 +197,7 @@ openspec status --change <change-id>         # which artifacts a change still la
 `npm run dev -- --host` is not needed: the dev server already listens on every interface
 (`vite.config.ts`).
 
-The Faxinger that happened before this application existed are the five sessions written down in
+The Faxinger that happened before this application existed are the seven sessions written down in
 [docs/legacy-faxinger.md](docs/legacy-faxinger.md), encoded in
 `scripts/history/legacy-events.json`. `npm run seed:history` files them, once and by hand, into a
 running Faxing server. It goes through the Faxepave's own door (`POST /api/events`), so it needs
@@ -212,7 +212,9 @@ FAXEPAVE_PASSWORD=… npm run seed:history -- https://faxing.example --write
 It only adds. An event whose id is already in the chronicle is left alone, so a correction made by
 hand is never overwritten, and an event is held back while the chronicle has another event on the
 same day, since that Faxing may have been entered by hand already. Nothing files them
-automatically, so an event a Faxepave deletes stays deleted.
+automatically, so an event a Faxepave deletes stays deleted. `--update` names events one by one
+and rewrites only their contestants, for a crown the record learns about after it was filed; see
+[Filing them](docs/legacy-faxinger.md#filing-them).
 
 ---
 

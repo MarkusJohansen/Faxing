@@ -35,7 +35,7 @@
 - [x] 4.3 `npm run seed:history -- --dry-run`
 - [x] 4.4 File into `server.cjs` on a local Postgres and replay the filing cases
 - [ ] 4.5 Walk the archive at phone and desktop width with the filed events
-- [ ] 4.6 Run it against the Pi: first without `--write`, then with
+- [x] 4.6 Run it against the Pi: first without `--write`, then with
 
 4.4 was run against a throwaway Postgres behind the built server: a preview, a missing and a
 wrong password, a write, a second run, a chronicle that already held a hand-entered event on
@@ -45,3 +45,17 @@ added under 1.5 are in the record and pass `--dry-run`, and they file with the s
 Adding them changed what the succession shows: 29 October 2022 and 30 September 2024 are the
 only reigns from before den andre orden, and they are what the founding mark in the crown lines
 separates from the Faxinger that follow.
+
+## 5. A row the record corrects after it was filed
+
+- [x] 5.1 `--update` names the events to compare, and refuses when it names none, so the default
+      run stays additive
+- [x] 5.2 The comparison prints one line per difference and keeps the row's title, day and flag
+- [x] 5.3 `--write` rewrites the contestants through `PUT /api/events?id=<id>`, keeping the ids the
+      chronicle already gave them
+- [x] 5.4 The spec, the record's own documentation and the command's header say so
+
+5.1–5.4 were written after the first filing: the 10 September 2025 row went in before Sofie
+Sagmo's crown was known, and the additive rule means no re-run would ever add it. The first
+attempt sent `PUT /api/events/<id>`, which the events handler does not route and answered 405;
+the address the API takes for one row is `/api/events?id=…`.
