@@ -13,3 +13,7 @@ server.cjs
 .env
 
 .DS_Store
+
+# Agent loop state and a stray Bun lockfile; this repo builds with npm
+.meta-ralph/
+bun.lock
