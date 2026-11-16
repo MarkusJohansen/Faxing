@@ -237,12 +237,12 @@ src/
 │   ├── id.ts                 a UUID that works on plain HTTP, where randomUUID is missing
 │   └── pixelArt.ts, pixelInk.tsx   pixel-art helpers for the livery
 └── components/
-    ├── RoomsPanel.tsx        the home screen's room list and create button (src/App.tsx:73)
-    ├── RoomLobby.tsx         the room before the start, while startedAt is null (src/App.tsx:78)
-    ├── Arena.tsx             the live board: groups, search, close (src/App.tsx:79)
+    ├── RoomsPanel.tsx        the home screen's room list and create button (src/App.tsx:85)
+    ├── RoomLobby.tsx         the room before the start, while startedAt is null (src/App.tsx:90)
+    ├── Arena.tsx             the live board: groups, search, close (src/App.tsx:91)
     ├── ContestantCard.tsx    one card: finish, forfeit, and the host's corrections
     ├── GlobalTimer.tsx       the hour: remaining time, urgency, expiry
-    ├── History.tsx, EventView.tsx   the chronicle list, and one archived contest (src/App.tsx:81-82)
+    ├── History.tsx, EventView.tsx   the chronicle list, and one archived contest (src/App.tsx:94-95)
     └── NightScene, Torch, GraveScene, HostGuide   the livery, and the host's how-to (not read in detail)
 
 api/                          Vercel-style handlers, run unchanged by the Pi server

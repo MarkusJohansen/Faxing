@@ -737,6 +737,12 @@
   margin: 0 auto;
 }
 
+/* Under the start button, quieter: beginning is the usual act, dissolving is not. */
+.lobby-footer {
+  margin-top: 1rem;
+  text-align: center;
+}
+
 .enlist-form {
   margin-top: 1.25rem;
 }
@@ -1760,6 +1766,8 @@
   .reigning-name { grid-column: 2; grid-row: 2; }
   .reigning-time { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
   .reigning-row .royal-crown { grid-row: 1 / span 2; align-self: center; }
+}
+
 /* The old records' titles (Erkekonge, Kronprins, Prins) have no crown to draw, and the phone
    layout hides the heder column, so these rows name the title beside the person instead. */
 .results-table .result-recorded-title {
