@@ -100,6 +100,7 @@ The full path, with the permission table and the schema, is in
 | Workstream | Status | What backs it |
 | --- | --- | --- |
 | Shared rooms: join by code, host runs the start and corrections, close into the chronicle | **Built** | `openspec/changes/faxing-rooms` marked complete; commit `3dd4747` |
+| The Faxepave's loft: a closed Faxing waits for the operator's word before it enters the chronicle | **Built** | `api/events.ts` (`status`), `src/components/FaxepaveLoft.tsx`, `openspec/changes/faxepave-loft` |
 | Titles: five crowns and their rules, with the forfeit and late-finish cases | **Built** | `npm run check:rules`, all passing |
 | The chronicle: archive list, event view, Faxepave-only edits | **Built** | `api/events.ts`, `src/components/History.tsx`, `EventView.tsx` |
 | The old Faxinger: five sessions recorded outside the app, filed from a checked-in record | **Built**, not yet filed on the Pi | `docs/legacy-faxinger.md`, `npm run seed:history`, `openspec/changes/legacy-chronicle` |
@@ -237,17 +238,19 @@ src/
 │   ├── id.ts                 a UUID that works on plain HTTP, where randomUUID is missing
 │   └── pixelArt.ts, pixelInk.tsx   pixel-art helpers for the livery
 └── components/
-    ├── RoomsPanel.tsx        the home screen's room list and create button (src/App.tsx:85)
-    ├── RoomLobby.tsx         the room before the start, while startedAt is null (src/App.tsx:90)
-    ├── Arena.tsx             the live board: groups, search, close (src/App.tsx:91)
+    ├── RoomsPanel.tsx        the home screen's room list and create button (src/App.tsx:120)
+    ├── RoomLobby.tsx         the room before the start, while startedAt is null (src/App.tsx:125)
+    ├── Arena.tsx             the live board: groups, search, close (src/App.tsx:126)
     ├── ContestantCard.tsx    one card: finish, forfeit, and the host's corrections
     ├── GlobalTimer.tsx       the hour: remaining time, urgency, expiry
-    ├── History.tsx, EventView.tsx   the chronicle list, and one archived contest (src/App.tsx:94-95)
+    ├── History.tsx, EventView.tsx   the chronicle list, and one archived contest (src/App.tsx:129,132)
+    ├── FaxepaveLoft.tsx      the queue of undecided Faxinger, the refused, and the filing form (src/App.tsx:130)
     └── NightScene, Torch, GraveScene, HostGuide   the livery, and the host's how-to (not read in detail)
 
 api/                          Vercel-style handlers, run unchanged by the Pi server
 ├── rooms.ts                  the room actions, with the permission checks in one place
-├── events.ts                 the chronicle: reads are open, writes need Faxepave
+├── events.ts                 the chronicle: reads are open, writes need Faxepave, and the
+│                             `status` gate decides what the chronicle lists
 ├── admin.ts                  Faxepave login: sets the session cookie
 ├── _auth.ts                  tokens, hashes, and the Faxepave check (underscore: not a route)
 └── _db.ts                    one Postgres pool per process
@@ -332,7 +335,8 @@ Read [CLAUDE.md](CLAUDE.md) for the conventions and the hard rules. Before you c
 The rules whose violation **fails silently** are the ones to remember:
 
 - **Never compute a title anywhere except `rankContestants()`.** Storing one creates a second
-  source of truth. The chronicle is the single exception, and it freezes titles at close.
+  source of truth. The chronicle is the single exception, and it freezes titles at close — then
+  waits on the loft until the Faxepave accepts the Faxing.
 - **Never count time up.** Every duration is a difference of two absolute instants. A timer
   that counts ticks stops when the tab sleeps and reports an expired contest as open.
 - **A forfeit is checked before the crown branches.** Otherwise a contestant who gave up takes

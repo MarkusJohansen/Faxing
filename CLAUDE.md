@@ -20,7 +20,9 @@ Three things are the state of a contest, and everything else is derived on each 
 - the current server time.
 
 No title, rank, group or duration is stored, except the frozen chronicle written when a room
-closes. Read [ARCHITECTURE.md §2–4](ARCHITECTURE.md#2-client-state) before changing
+closes. That frozen Faxing is not history yet: it waits on the Faxepave's loft until the operator
+accepts it, and only then is it counted, crowned or listed. Read
+[ARCHITECTURE.md §2–4](ARCHITECTURE.md#2-client-state) before changing
 `src/lib/ranking.ts`, `App.tsx` or `api/rooms.ts`.
 
 ### This is a party tool
@@ -60,7 +62,8 @@ list, with what enforces each, is [ARCHITECTURE.md §9](ARCHITECTURE.md#9-invari
    only place a title is decided. A stored title is a second source of truth that disagrees
    with the instant it came from, and nothing errors. The one exception is the chronicle: `close`
    in `api/rooms.ts` freezes the ranked list into `faxing_events` on purpose, so a later rule
-   change does not rewrite history.
+   change does not rewrite history. It files the row `pending`; the Faxepave's word flips
+   `status` and nothing else, so accepting a Faxing can never edit the frozen list.
 
 2. **Never accumulate elapsed time.** Every duration is a difference of two absolute instants.
    A counter that ticks stops when the tab sleeps, and then reports an expired contest as open.
@@ -141,8 +144,8 @@ it and say in a comment what it guards.
 Nothing else is tested automatically: not the server's permission checks, not the room lock, not
 the browser flows. Verify those by walking the interface, and say that you did. The states that
 matter are: an empty room, a running contest with a crowded board, a finish just recorded, a
-forfeit, the hour expired, and a room closed into the chronicle, at a phone width and a desktop
-width.
+forfeit, the hour expired, a room closed and its Faxing waiting on the loft, one refused and
+later taken in, and a room closed into the chronicle, at a phone width and a desktop width.
 
 ## Before you say it is done
 
@@ -165,6 +168,9 @@ Each line is something you can confirm with one command or one search.
 - No new dependency: `git diff -- package.json` adds nothing to `dependencies`.
 - No generated file staged: `git diff --cached --name-only` contains no `node_modules/`,
   `dist/` or `server.cjs`.
+- Nothing undecided is counted: the only list read in `api/events.ts` filters
+  `status = 'published'` by default. A new `SELECT … FROM faxing_events` without that filter
+  would put the queue on the home screen, in the tribute, and in the archive.
 - No hex literal in a component rule: `grep -rnE "#[0-9a-fA-F]{3,6}\b" src --include=*.tsx`
   returns nothing.
 - Any new interface copy is in the old-Norwegian register, and the moderation footer is intact.

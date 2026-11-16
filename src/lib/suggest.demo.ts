@@ -11,7 +11,7 @@ const entry = (name: string, gender: Gender = 'male'): ArchivedContestant =>
   ({ id: name, name, gender, finishedAt: null, disqualified: false, title: null, elapsed: null })
 
 const faxing = (date: number, contestants: ArchivedContestant[]): FaxingEvent =>
-  ({ id: String(date), name: 'Faxing', date, official: true, contestants })
+  ({ id: String(date), name: 'Faxing', date, official: true, contestants, status: 'published' })
 
 const events = [
   faxing(1, [entry('Tora Prøvesen'), entry('Åse Eksempel'), entry('Kira Lie Test'), entry('Kira Schaug-Test')]),

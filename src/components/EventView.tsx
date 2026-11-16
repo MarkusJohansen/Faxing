@@ -11,9 +11,13 @@ interface Props {
   /** The whole chronicle: a past champion is someone who won at an earlier official Faxing. */
   events: FaxingEvent[]
   isAdmin: boolean
+  /** A Faxing filed from the loft opens with its editor already out, so attendees can follow. */
+  startEditing?: boolean
   onBack?: () => void
   onSave: (event: FaxingEvent) => Promise<void>
   onDelete: (id: string) => Promise<void>
+  /** The Faxepave's decision on a Faxing that is not in the chronicle yet. */
+  onDecide?: (id: string, status: 'published' | 'denied') => Promise<void>
 }
 
 const formatInputDate = (date: number) => { const timestamp = Number(date); return Number.isFinite(timestamp) && Number.isFinite(new Date(timestamp).getTime()) ? new Date(timestamp).toISOString().slice(0, 10) : '' }
@@ -25,7 +29,7 @@ const isLegacyTitle = (title: RecordedTitle | null): title is 'Erkekonge' | 'Kro
 /** A recorded time or a title is evidence enough to count as finished, even with no instant. */
 const hasFinished = (contestant: ArchivedContestant) => !contestant.disqualified && (contestant.finishedAt !== null || contestant.elapsed !== null || contestant.title !== null)
 
-export default function EventView({ event, events, isAdmin, onSave, onDelete }: Props) {
+export default function EventView({ event, events, isAdmin, startEditing = false, onSave, onDelete, onDecide }: Props) {
   const [draft, setDraft] = useState(() => ({ ...event, contestants: Array.isArray(event.contestants) ? event.contestants : [] }))
   const [saving, setSaving] = useState(false)
   useEffect(() => { setDraft({ ...event, contestants: Array.isArray(event.contestants) ? event.contestants : [] }) }, [event])
@@ -37,8 +41,10 @@ export default function EventView({ event, events, isAdmin, onSave, onDelete }: 
   const [newSeconds, setNewSeconds] = useState('')
   const [addError, setAddError] = useState('')
   const [savedMessage, setSavedMessage] = useState('')
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(startEditing)
   const [adminVerified, setAdminVerified] = useState(isAdmin)
+  const [deciding, setDeciding] = useState(false)
+  const [decisionError, setDecisionError] = useState('')
   const canEdit = adminVerified && isEditing
   useEffect(() => { setAdminVerified(isAdmin) }, [isAdmin])
   const openEditor = async () => {
@@ -93,6 +99,14 @@ export default function EventView({ event, events, isAdmin, onSave, onDelete }: 
     }
   }
 
+  // One press: a refusal keeps the row, so the mistake it might be is undone from the loft.
+  const decide = async (status: 'published' | 'denied') => {
+    if (!onDecide) return
+    setDeciding(true)
+    setDecisionError('')
+    try { await onDecide(event.id, status) } catch { setDecisionError('Avgjørelsen lot seg ikke føre. Prøv påny.') } finally { setDeciding(false) }
+  }
+
   const save = async () => {
     setSaving(true)
     setSavedMessage('')
@@ -130,6 +144,16 @@ export default function EventView({ event, events, isAdmin, onSave, onDelete }: 
           </>
         )}
       </div>
+      {event.status !== 'published' && <div className={`approval-notice approval-${event.status}`} role="status">
+        <span className="eyebrow">{event.status === 'pending' ? 'Til avgjørelse' : 'Avvist'}</span>
+        <strong>{event.status === 'pending' ? 'Denne Faxingen venter på Faxepaven.' : 'Faxepaven har avvist denne Faxingen.'}</strong>
+        <span>{event.status === 'pending' ? 'Utfallet er skrevet ned, men Faxingen står ennå ikke i krøniken.' : 'Den står ikke i krøniken, men den er ikke slettet.'}</span>
+        {isAdmin && onDecide && <div className="approval-actions">
+          <button className="medieval-btn" type="button" onClick={() => decide('published')} disabled={deciding}>{deciding ? 'Avgjør…' : 'Ta inn i krøniken'}</button>
+          {event.status === 'pending' && <button className="medieval-btn danger-btn" type="button" onClick={() => decide('denied')} disabled={deciding}>Avvis</button>}
+        </div>}
+        {decisionError && <p className="form-error" role="alert">{decisionError}</p>}
+      </div>}
       <p className="panel-desc">{draft.contestants.length} deltagere i denne dyst.</p>
 
       {canEdit && (

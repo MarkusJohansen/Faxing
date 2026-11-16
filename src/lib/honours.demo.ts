@@ -12,7 +12,7 @@ const entry = (name: string, title: RecordedTitle | null): ArchivedContestant =>
   ({ id: name, name, gender: 'male', finishedAt: null, disqualified: false, title, elapsed: null })
 
 const faxing = (contestants: ArchivedContestant[], official = true): FaxingEvent =>
-  ({ id: 'f', name: 'Faxing', date: 1, official, contestants })
+  ({ id: 'f', name: 'Faxing', date: 1, official, contestants, status: 'published' })
 
 // The lore's people and the aliases, taken from the data file.
 const lore = Object.entries(record.honours)

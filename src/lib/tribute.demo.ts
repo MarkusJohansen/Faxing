@@ -9,7 +9,7 @@ const crowned = (name: string, title: Title | null): RankedContestant =>
   ({ id: name, name, gender: 'male', finishedAt: 1, disqualified: false, title, elapsed: 0 })
 
 const faxing = (name: string, date: number, official: boolean, contestants: RankedContestant[]): FaxingEvent =>
-  ({ id: name, name, date, official, contestants })
+  ({ id: name, name, date, official, contestants, status: 'published' })
 
 function expect(label: string, events: FaxingEvent[], expected: string | null) {
   const tribute = reigningTribute(events)
