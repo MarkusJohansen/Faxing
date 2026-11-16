@@ -296,7 +296,7 @@ den andre orden was founded on 10 October 2024; the other five are Faxings of th
 ## 30 September 2024 — Gjenfødelsen (official)
 
 No message survives. This is the operator's record of the night the faxing came back: a
-hyttetur with prokom, eight at the table, and William Fagerstrøm winning in under ten minutes
+hyttetur with prokom, seven at the table, and William Fagerstrøm winning in under ten minutes
 and being crowned **Faxekonge William I**. Ten days later, at Konsilet på A4, den andre orden
 was founded and he handed the crown on rather than keep it (`src/components/Lore.tsx`,
 chapter «Gjenfødelsen»).
@@ -306,8 +306,8 @@ faxed with him — Markus Johansen, Henrik Moe Wæhre, Are Tœmmerås, Erik Davi
 Hallvard Vatnar Olsen and Lars Tangen Hestnes — every one of them with no time.
 
 The Lore states «under 10 minutter» — a bound, not a time — so no duration is stored and the
-row reads `Tid ukjent` for all seven. The Lore counts «hele 8 deltakere» that night, so one of
-the eight is still named in no record; the row holds the seven names there are.
+row reads `Tid ukjent` for all seven. Seven faxed that night, which is what the row holds: the
+organizer's count, checked against the names, is six beside the king.
 
 ---
 

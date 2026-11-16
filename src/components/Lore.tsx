@@ -41,7 +41,7 @@ const CHAPTERS: { title: string; emblem: keyof typeof EMBLEMS; body: ReactNode }
     title: 'Gjenfødelsen',
     emblem: 'flame',
     body: <>
-      <p>Uårene gikk, men gløden sloknet aldri. Høsten 2024, under en skjebnesvanger hyttetur med prokom, ble den til en flamme. Faxingen blomstret opp igjen med hele 8 deltakere, som den gang var rekord. <strong>William Fagerstrøm</strong> tok seieren på under 10 minutter, en sagnomsust grense på den tiden, og ble kronet til <strong>Faxekonge William I</strong>.</p>
+      <p>Uårene gikk, men gløden sloknet aldri. Høsten 2024, under en skjebnesvanger hyttetur med prokom, ble den til en flamme. Faxingen blomstret opp igjen med hele 7 deltakere, som den gang var rekord. <strong>William Fagerstrøm</strong> tok seieren på under 10 minutter, en sagnomsust grense på den tiden, og ble kronet til <strong>Faxekonge William I</strong>.</p>
       <p>Entusiasmen rundt faxingen økte betraktelig, og kulminerte i det vi i dag omtaler som <em>konsilet på A4</em>.</p>
     </>,
   },
