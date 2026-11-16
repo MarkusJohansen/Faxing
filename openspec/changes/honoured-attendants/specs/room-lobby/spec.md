@@ -2,11 +2,14 @@
 
 ### Requirement: An attendant who holds an honour looks different
 An entry in the lobby's list of enlisted people, and a suggestion, SHALL be marked when its person
-holds an honour. The honours SHALL be `saint`, `pope` and `champion`. A person SHALL be a champion when the
+holds an honour. The honours SHALL be `founder`, `saint`, `pope` and `champion`. A person SHALL be a champion when the
 chronicle records them with the title Faxekonge, Faxedronning or Erkekonge in an official
-Faxing; a title from an unofficial Faxing SHALL NOT count. The pope
+Faxing; a title from an unofficial Faxing SHALL NOT count. The founders, the pope
 and the saints SHALL be the people the order's lore names, kept as data in `src/data/people.json`.
-A person holding several SHALL show one, chosen in the order saint, pope, champion. The mark SHALL
+The founders SHALL be the members of Eldsterådet, who made the game itself, and their mark SHALL stand
+above every other: a person holding several SHALL show one, chosen in the order founder, saint, pope,
+champion. The founders' mark SHALL differ from the saint's in shape as well as in colour — a framed
+plaque rather than a bare star — because their standing is the one no Faxing can grant. The mark SHALL
 include a text label, not colour alone, and SHALL stand out from an unmarked row: a tint across the
 row and a light of its own (a slow halo for a saint, a gold shimmer for the pope, an ember for a
 champion). Motion SHALL stop when the viewer asks for reduced motion, and the mark SHALL read the same
@@ -19,6 +22,14 @@ without it. Entries without an honour SHALL look as they do now.
 #### Scenario: A crown from an unofficial night
 - **WHEN** a person was crowned only at an unofficial Faxing
 - **THEN** their entry is unmarked
+
+#### Scenario: A founder of the game
+- **WHEN** a person in the room is one of Eldsterådet
+- **THEN** their entry carries the founder mark, framed and in the ancient brass, and not the saint's
+
+#### Scenario: A founder who was also crowned
+- **WHEN** a member of Eldsterådet is recorded as Faxekonge at an official Faxing
+- **THEN** their entry shows the founder mark, because no crown reaches above the game's makers
 
 #### Scenario: A champion who is also a saint
 - **WHEN** a person is both recorded as Faxekonge at an official Faxing and named a saint by the lore

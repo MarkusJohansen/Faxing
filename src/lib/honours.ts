@@ -2,16 +2,18 @@ import type { FaxingEvent, RecordedTitle } from '../types'
 import record from '../data/people.json' with { type: 'json' }
 import { nameKey, personKey } from './people.ts'
 
-export type Honour = 'saint' | 'pope' | 'champion'
+export type Honour = 'founder' | 'saint' | 'pope' | 'champion'
 
-/** Highest first: a person holding several shows the first. */
-const ORDER: Honour[] = ['saint', 'pope', 'champion']
+/** Highest first: a person holding several shows the first. The game's founders stand above all. */
+const ORDER: Honour[] = ['founder', 'saint', 'pope', 'champion']
 
 const CROWNS = new Set<RecordedTitle>(['Faxekonge', 'Faxedronning', 'Erkekonge'])
 
 /**
- * The standing the order's lore gives, by person key. Lore, not chronicle: no Faxing records a pope
- * or a saint, so the people are named in src/data/people.json and never in code.
+ * The standing the order's lore gives, by person key. Lore, not chronicle: no Faxing records a
+ * founder, a pope or a saint, so the people are named in src/data/people.json and never in code.
+ * Eldsterådet are the founders: they made the game itself, so no crown and no canonisation reaches
+ * above them.
  */
 const LORE = new Map<string, Honour>(
   Object.entries(record.honours).map(([name, honour]) => [nameKey(name), honour as Honour]),
@@ -20,8 +22,8 @@ const LORE = new Map<string, Honour>(
 /** The lore's people by their full names: a person who exists even where no entry spells it out. */
 export const LORE_NAMES: string[] = Object.keys(record.honours)
 
-export const HONOUR_LABEL: Record<Honour, string> = { saint: 'Helgen', pope: 'Pave', champion: 'Fordums Mester' }
-export const HONOUR_GLYPH: Record<Honour, string> = { saint: '✦', pope: '✠', champion: '♛' }
+export const HONOUR_LABEL: Record<Honour, string> = { founder: 'Grunnlegger', saint: 'Helgen', pope: 'Pave', champion: 'Fordums Mester' }
+export const HONOUR_GLYPH: Record<Honour, string> = { founder: '⚜', saint: '✦', pope: '✠', champion: '♛' }
 
 /**
  * Each person's honour, by person key, as of the instant `before` (default: now, which is what a

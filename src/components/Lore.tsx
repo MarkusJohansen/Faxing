@@ -52,6 +52,7 @@ const CHAPTERS: { title: string; emblem: keyof typeof EMBLEMS; body: ReactNode }
       <p>Konsilet markerer stiftelsen av <em>den andre orden</em>. Faxekonge William I viste nåde mot kongen han selv hadde avsatt, og opphøyde Markus I til <strong>Pave</strong>, til ære for hans rolle i faxingens overlevelse. Selv tok William tittelen <strong>Den faxumenske patriark</strong>, for å vise at ordenen kan ledes i samarbeid, og at ordenen står over regentene. Regenter er midlertidige. Ordenen er evig.</p>
       <p>Sammen sendte de en brevdue til Backlog med <em>de 10 bud</em>. Budene var muntlig overlevert fra Eldsterådet, som selv fant dem på to steintavler i Hoddevik. Slik ble ordenen en interessegruppe i linjeforeningen.</p>
       <p>Eldsterådet og Jarl Are ble deretter kanonisert av Pave Markus I og Patriark William I, og skal derfor omtales som <strong>St. Njål</strong>, <strong>St. Magne</strong>, <strong>St. Ivar</strong> og <strong>St. Are</strong>.</p>
+      <p>I krøniken står Eldsterådet likevel over helgenene. De tre grunnla selve Faxingen, og bærer derfor et merke som ingen kongs- eller pavenavn kan nå opp til; Jarl Are, som kom til senere, bærer helgenens.</p>
     </>,
   },
   {

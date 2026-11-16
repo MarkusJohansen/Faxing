@@ -286,8 +286,9 @@ council as **Kong Markus I**. The Lore tells the same night (`src/components/Lor
 elders who were at the table with him, Njål Sørland, Ivar Hembre and Magne Slaatsveen, with no
 time. The Council names them as Fyrst Njål, Hertug Ivar and Grev Magne; the encoding keeps the
 names the record gives, not the titles the Lore gave them later. Every one of the three carries
-the order's `Helgen` mark, because Konsilet på A4 made Eldsterådet saints; that mark is lore, so
-it is filed in `src/data/people.json` and not in the row.
+the order's `Grunnlegger` mark, because Eldsterådet made the game itself and no crown or canonisation
+reaches above that; the mark stands above the saints', and it is lore, so it is filed in
+`src/data/people.json` and not in the row.
 
 The record states fifteen minutes, not a clock time, so the encoding stores the duration and
 leaves `finishedAt` empty, as every row here does. It is the older of the two rows from before

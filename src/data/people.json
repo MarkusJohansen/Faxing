@@ -1,5 +1,5 @@
 {
-  "about": "Who is who in the chronicle, kept here as data so that no source file names a person. 'aliases' maps a name as the old records wrote it (a first name only, a typo, an older spelling) to the full name of the person it is; keys compare case-insensitively. 'honours' gives the order's lore a standing that no Faxing records: 'saint' or 'pope', by full name. Left out of 'aliases' on purpose until someone decides who they are: William, Henrik, Kasper, Eirik, Erik, Kristian, Magnus byrkj, Sofie.",
+  "about": "Who is who in the chronicle, kept here as data so that no source file names a person. 'aliases' maps a name as the old records wrote it (a first name only, a typo, an older spelling) to the full name of the person it is; keys compare case-insensitively. 'honours' gives the order's lore a standing that no Faxing records: 'founder' (Eldsterådet, who made the game), 'saint' or 'pope', by full name. Left out of 'aliases' on purpose until someone decides who they are: William, Henrik, Kasper, Eirik, Erik, Kristian, Magnus byrkj, Sofie.",
   "aliases": {
     "Andrej": "Andrej Lazic",
     "Arne": "Arne Hildrum",
@@ -26,9 +26,9 @@
     "Markus Johansen": "saint",
     "William Fagerstrøm": "saint",
     "Are Tømmerås": "saint",
-    "Njål Sørland": "saint",
-    "Ivar Hembre": "saint",
-    "Magne Slaatsveen": "saint",
+    "Njål Sørland": "founder",
+    "Ivar Hembre": "founder",
+    "Magne Slaatsveen": "founder",
     "Gleb Rychkov": "pope"
   }
 }

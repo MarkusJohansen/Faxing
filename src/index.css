@@ -35,9 +35,9 @@
   --blood-500: #8c2a22;
   --blood-300: #e0685a;
   /*
-   * Antiquity: the Faxinger of den første orden, the nights before den andre orden was founded.
-   * Older stone and tarnished brass, so the archive's run of cards shows which nights are ancient.
-   * Nothing else uses these.
+   * Antiquity: the Faxinger of den første orden, the nights before den andre orden was founded, and
+   * the founders' mark — Eldsterådet made the game in those years, so they wear its metal. Older
+   * stone and tarnished brass. Nothing else uses these.
    */
   --ancient-800: #232b1f;
   --ancient-600: #3b4130;

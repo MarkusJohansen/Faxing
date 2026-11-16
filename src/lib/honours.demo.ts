@@ -16,6 +16,7 @@ const faxing = (contestants: ArchivedContestant[], official = true): FaxingEvent
 
 // The lore's people and the aliases, taken from the data file.
 const lore = Object.entries(record.honours)
+const founder = lore.find(([, honour]) => honour === 'founder')![0]
 const saint = lore.find(([, honour]) => honour === 'saint')![0]
 const pope = lore.find(([, honour]) => honour === 'pope')![0]
 const honouredNames = new Set(Object.keys(record.honours))
@@ -23,8 +24,8 @@ const [crownAlias, crownFull] = Object.entries(record.aliases).find(([, full]) =
 const saintAlias = Object.entries(record.aliases).find(([, full]) => record.honours[full as keyof typeof record.honours] === 'saint')?.[0]
 
 const honours = honoursOf([
-  faxing([entry('Hedda Hage', 'Faxekonge')], false),
-  faxing([entry('Vera Vinner', 'Erkekonge'), entry(crownAlias, 'Faxekonge'), entry('Kåre Knekt', 'Faxeridder'), entry(saint, 'Faxekonge')]),
+  faxing([entry('Hedda Hage', 'Faxekonge'), entry(founder, null)], false),
+  faxing([entry('Vera Vinner', 'Erkekonge'), entry(crownAlias, 'Faxekonge'), entry('Kåre Knekt', 'Faxeridder'), entry(saint, 'Faxekonge'), entry(founder, 'Faxekonge')]),
 ])
 const of = (name: string) => honours.get(personKey({ name })) ?? null
 
@@ -48,6 +49,11 @@ function demo() {
   // Guards against the lore losing to the chronicle: the saint is shown over the champion.
   expect('a saint who was also crowned shows the saint', of(saint), 'saint')
 
+  // Guards against the game's makers being dressed as ordinary saints or champions: Eldsterådet
+  // founded Faxingen itself, so their mark stands above every crown and every canonisation.
+  expect('a founder who was also crowned shows the founder', of(founder), 'founder')
+  expect('a founder holds at an unofficial Faxing too', of(founder), 'founder')
+
   // Guards against a saint going unmarked because the old record wrote an alias of the name.
   if (saintAlias !== undefined) expect('an alias of a saint is the saint', of(saintAlias), 'saint')
 
@@ -62,6 +68,7 @@ function demo() {
   expect('not a champion on the night of the win', at(100, 'Vinnie Vinner'), null)
   expect('a champion at a later Faxing', at(200, 'Vinnie Vinner'), 'champion')
   expect('a saint holds before any Faxing was held', at(0, saint), 'saint')
+  expect('a founder holds before any Faxing was held', at(0, founder), 'founder')
   expect('the pope holds on the earliest page too', at(0, pope), 'pope')
 
   expect('the pope needs no chronicle entry', of(pope), 'pope')

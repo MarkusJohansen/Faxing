@@ -978,6 +978,9 @@
 
 .honoured-champion { --honour: var(--lantern-400); }
 .honoured-pope { --honour: var(--flame-200); }
+/* The founders of the game: brass, the metal of the ancient cards, because their standing is the
+   one the first order left behind. */
+.honoured-founder { --honour: var(--ancient-300); }
 .honoured-saint { --honour: var(--moon-50); }
 
 /* An inset edge, not a border: it must not push the name out of line with unmarked rows. */
@@ -2723,9 +2726,19 @@
   display: inline-block;
 }
 
+.honoured-founder .honour-mark,
 .honoured-saint .honour-mark,
 .honoured-champion .honour-mark {
   text-shadow: 0 0 .5rem var(--honour);
+}
+
+/* The founders' mark is framed and set on old stone: the one standing no Faxing and no canonisation
+   can grant, so it is shaped differently and not only coloured differently. */
+.honoured-founder .honour-mark {
+  padding: 0 .3rem;
+  border: var(--px) solid var(--honour);
+  background-color: var(--ancient-800);
+  color: var(--ancient-100);
 }
 
 .results-table .result-written {
@@ -2798,6 +2811,8 @@
       laws-seal-sway 1.6s ease-in-out calc(var(--unroll-time) + var(--unroll-wait));
   }
 
+  .contestant-item.honoured-founder,
+  .results-table .result-row.honoured-founder { animation: halo-breathe 5s ease-in-out infinite; }
   .contestant-item.honoured-saint,
   .results-table .result-row.honoured-saint { animation: halo-breathe 3.6s ease-in-out infinite; }
   .contestant-item.honoured-pope,
