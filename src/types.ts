@@ -7,7 +7,8 @@ export type Title =
   | 'Faxeridder'
   | 'Hestemann'
 
-export type Screen = 'home' | 'room' | 'history' | 'event' | 'lore'
+/** 'loft' is the Faxepave's own screen; the nav offers it only while the session is held. */
+export type Screen = 'home' | 'room' | 'history' | 'event' | 'loft' | 'lore'
 
 export interface Contestant {
   id: string
@@ -35,12 +36,20 @@ export interface ArchivedContestant extends Contestant {
   elapsed: number | null
 }
 
+/**
+ * Where a Faxing stands. Only 'published' is the chronicle: a closed room files 'pending', and
+ * the Faxepave may 'deny' it. A refusal keeps the row, so nothing recorded at close is lost.
+ */
+export type EventStatus = 'published' | 'pending' | 'denied'
+
 export interface FaxingEvent {
   id: string
   name: string
   date: number
   official: boolean
   contestants: ArchivedContestant[]
+  /** A closed room's entry waits here until the Faxepave admits it to the chronicle. */
+  status: EventStatus
   password?: string
 }
 

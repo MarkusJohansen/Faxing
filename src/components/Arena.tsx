@@ -32,7 +32,7 @@ export default function Arena({ title, code, rankedContestants, contestStartTime
     {failed.length > 0 && <section className="arena-section fallen"><h2 className="section-title shame">Hestemann</h2><div className="cards-grid">{failed.map(c => card(c, null))}</div></section>}
     {you.host && <div className="arena-footer">{!showCloseConfirm
       ? <button className="medieval-btn reset-btn" onClick={() => setShowCloseConfirm(true)}>Avslutt og lagre Faxing</button>
-      : <div className="confirm-reset"><p>Er I visse? Rommet stenges og utfallet skrives i krøniken.</p><div className="confirm-btns"><button className="medieval-btn danger-btn" onClick={() => onAct('close')}>Ja, lagre Faxingen</button><button className="medieval-btn" onClick={() => setShowCloseConfirm(false)}>Fortsett</button></div></div>}
+      : <div className="confirm-reset"><p>Er I visse? Rommet stenges, og utfallet sendes til Faxepaven før det kommer i krøniken.</p><div className="confirm-btns"><button className="medieval-btn danger-btn" onClick={() => onAct('close')}>Ja, steng Rommet</button><button className="medieval-btn" onClick={() => setShowCloseConfirm(false)}>Fortsett</button></div></div>}
     </div>}
   </div>
 }

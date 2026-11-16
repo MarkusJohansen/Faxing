@@ -196,7 +196,11 @@ async function act(db: PoolClient, room: RoomRow, action: unknown, body: Body, y
       // drinking at an early close was filed with no title and their unfinished time.
       const ranked = rankContestants(members.rows.map(toContestant), begun, Math.max(now, begun + CONTEST_DURATION_MS), CONTEST_DURATION_MS)
       const eventId = randomUUID()
-      await db.query('INSERT INTO faxing_events (id, title, event_date, official, attendees) VALUES ($1, $2, $3, $4, $5::jsonb)', [eventId, room.title, new Date(begun), room.official, JSON.stringify(ranked)])
+      // Filed for the Faxepave, not straight into the chronicle: a room is raised by anyone who
+      // holds a phone, so the archive takes the close as a proposal. The record itself is frozen
+      // here, titles included; approval decides only whether the chronicle lists it, and a
+      // refusal keeps the row so nothing recorded at close is destroyed.
+      await db.query(`INSERT INTO faxing_events (id, title, event_date, official, attendees, status) VALUES ($1, $2, $3, $4, $5::jsonb, 'pending')`, [eventId, room.title, new Date(begun), room.official, JSON.stringify(ranked)])
       await db.query('UPDATE faxing_rooms SET closed_at = $2, event_id = $3 WHERE id = $1', [room.id, new Date(now), eventId])
       return
     }

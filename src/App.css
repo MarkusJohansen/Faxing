@@ -1760,6 +1760,8 @@
   .reigning-name { grid-column: 2; grid-row: 2; }
   .reigning-time { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
   .reigning-row .royal-crown { grid-row: 1 / span 2; align-self: center; }
+}
+
 /* The old records' titles (Erkekonge, Kronprins, Prins) have no crown to draw, and the phone
    layout hides the heder column, so these rows name the title beside the person instead. */
 .results-table .result-recorded-title {
@@ -1865,6 +1867,144 @@
 .admin-status {
   width: auto;
   flex: none;
+}
+
+/* ── The loft ─────────────────────────────────────────── */
+.loft-heading {
+  margin-bottom: 1.25rem;
+}
+
+/* The count is the one number the Faxepave opens this screen to learn. */
+.loft-badge {
+  flex: none;
+  padding: .35rem .7rem;
+  font-family: var(--font-num);
+  font-size: 1rem;
+  color: var(--mist-200);
+  background: var(--night-900);
+  border: var(--px) solid var(--stone-500);
+}
+
+.loft-badge-waiting {
+  color: var(--night-900);
+  background: var(--lantern-400);
+  border-color: var(--lantern-300);
+}
+
+.loft-section {
+  margin-bottom: 1.25rem;
+}
+
+.loft-empty {
+  margin: 0;
+  font-size: .95rem;
+  color: var(--mist-200);
+}
+
+.loft-list {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.loft-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .7rem .8rem;
+  background: var(--night-800);
+  border: var(--px) solid var(--night-900);
+}
+
+/* Refused entries stay on the loft, visibly outside the archive. */
+.loft-row-denied {
+  border-left: calc(var(--px) * 3) solid var(--blood-500);
+}
+
+.loft-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.loft-row-main strong {
+  font-family: var(--font-title);
+  font-weight: 400;
+  font-size: 1.3rem;
+  line-height: 1.1;
+  color: var(--moon-50);
+  overflow-wrap: anywhere;
+}
+
+.loft-meta {
+  font-size: .85rem;
+  color: var(--mist-200);
+}
+
+.loft-actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.loft-file-form {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto auto;
+  align-items: end;
+  gap: .6rem;
+}
+
+/* ── A Faxing outside the chronicle ───────────────────── */
+.approval-notice {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  margin-bottom: 1rem;
+  padding: .8rem 1rem;
+  background: var(--night-800);
+  border: var(--px) solid var(--night-900);
+  border-left: calc(var(--px) * 3) solid var(--lantern-400);
+  box-shadow: inset var(--px) var(--px) 0 var(--bevel-hi), inset calc(var(--px) * -1) calc(var(--px) * -1) 0 var(--bevel-lo);
+}
+
+.approval-notice strong {
+  color: var(--moon-50);
+}
+
+.approval-notice > span:last-of-type {
+  font-size: .9rem;
+  color: var(--mist-200);
+}
+
+.approval-denied {
+  border-left-color: var(--blood-500);
+}
+
+.approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .6rem;
+}
+
+/* The nav's mark: how many Faxinger wait for the Faxepave's word. */
+.nav-count {
+  display: inline-block;
+  min-width: 1.5em;
+  margin-left: .35rem;
+  padding: 0 .3rem;
+  font-family: var(--font-num);
+  font-size: .9rem;
+  line-height: 1.4;
+  color: var(--night-900);
+  background: var(--lantern-400);
+  border: var(--px) solid var(--night-900);
 }
 
 /* ── Wide screens: a taller scene, at exactly 4× ──────── */
@@ -1990,6 +2130,25 @@
 
   .admin-actions .danger-btn {
     margin-left: 0;
+  }
+
+  /* A loft row is two lines on a phone: the Faxing, then its three presses. */
+  .loft-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .loft-actions .medieval-btn {
+    flex: 1;
+  }
+
+  .loft-file-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .loft-file-form label:first-child,
+  .loft-file-form .medieval-btn {
+    grid-column: 1 / -1;
   }
 }
 

@@ -55,8 +55,14 @@ export async function migrate() {
       event_date timestamptz NOT NULL,
       official boolean NOT NULL DEFAULT false,
       attendees jsonb NOT NULL DEFAULT '[]'::jsonb,
+      status text NOT NULL DEFAULT 'published',
       created_at timestamptz NOT NULL DEFAULT now()
     )`)
+    // A closed room files its Faxing as 'pending' until the Faxepave admits it. Existing rows
+    // predate the gate and are already in the chronicle, so they stay 'published'. No CHECK
+    // constraint: Postgres has no ADD CONSTRAINT IF NOT EXISTS, and migrate() must be re-runnable,
+    // so the API validates the three values instead. It is the only writer.
+    await pool.query(`ALTER TABLE faxing_events ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'published'`)
     await pool.query(`CREATE TABLE IF NOT EXISTS faxing_rooms (
       id text PRIMARY KEY,
       code text NOT NULL UNIQUE,
