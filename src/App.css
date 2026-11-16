@@ -55,13 +55,13 @@
   /* clip (not hidden) so the scene's overflow is cut sideways while the login popover,
      which hangs below the header, is not. */
   overflow-x: clip;
-  /* The scene's sky bands and bridge, continued flat to either side on wide screens. */
+  /* The scene's dusk bands and bridge, continued flat to either side on wide screens. */
   background:
     linear-gradient(
       var(--night-700) 0 20.3%,
-      var(--stone-700) 20.3% 45.3%,
-      var(--stone-600) 45.3% 67.2%,
-      var(--stone-500) 67.2% 78.1%,
+      var(--dusk-700) 20.3% 45.3%,
+      var(--dusk-500) 45.3% 67.2%,
+      var(--dusk-300) 67.2% 78.1%,
       var(--night-900) 78.1% 82.8%,
       var(--night-800) 82.8% 100%
     ) 0 calc(var(--scene-crop) * -1) / 100% var(--scene-h) no-repeat,

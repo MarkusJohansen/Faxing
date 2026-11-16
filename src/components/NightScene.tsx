@@ -49,13 +49,13 @@ const WANDERER_TOP = 50 - WANDERER_BODY.length - 2
  */
 function paintScene() {
   const sky = createLayer(WIDTH, HEIGHT, 'c')
-  // Sky: bands lightening toward the horizon, each seam dithered.
-  sky.dither(0, 12, WIDTH, 2, 'd')
-  sky.rect(0, 14, WIDTH, HEIGHT - 14, 'd')
-  sky.dither(0, 28, WIDTH, 2, 'e')
-  sky.rect(0, 30, WIDTH, HEIGHT - 30, 'e')
-  sky.dither(0, 42, WIDTH, 2, 'f')
-  sky.rect(0, 44, WIDTH, HEIGHT - 44, 'f')
+  // Sky: dusk bands warming toward the horizon, each seam dithered.
+  sky.dither(0, 12, WIDTH, 2, 'P')
+  sky.rect(0, 14, WIDTH, HEIGHT - 14, 'P')
+  sky.dither(0, 28, WIDTH, 2, 'Q')
+  sky.rect(0, 30, WIDTH, HEIGHT - 30, 'Q')
+  sky.dither(0, 42, WIDTH, 2, 'R')
+  sky.rect(0, 44, WIDTH, HEIGHT - 44, 'R')
   // Moon: dithered halo, pale disc, brighter upper-left, a few craters.
   for (let y = MOON.y - 17; y <= MOON.y + 17; y++) {
     for (let x = MOON.x - 17; x <= MOON.x + 17; x++) {
@@ -97,7 +97,7 @@ function paintScene() {
   ARCH_CENTRES.forEach(centre => {
     for (let y = 54; y < HEIGHT; y++) {
       for (let x = centre - 16; x <= centre + 16; x++) {
-        if (((x - centre) / 16) ** 2 + ((y - HEIGHT) / 10) ** 2 <= 1) town.set(x, y, y > 59 && (x + y) % 2 === 0 ? 'e' : 'd')
+        if (((x - centre) / 16) ** 2 + ((y - HEIGHT) / 10) ** 2 <= 1) town.set(x, y, y > 59 && (x + y) % 2 === 0 ? 'Q' : 'P')
       }
     }
   })
