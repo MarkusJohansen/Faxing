@@ -8,7 +8,10 @@
       "date": "2022-10-29",
       "official": true,
       "contestants": [
-        { "name": "Markus Johansen", "gender": "male", "title": "Faxekonge", "time": "15:00" }
+        { "name": "Markus Johansen", "gender": "male", "title": "Faxekonge", "time": "15:00" },
+        { "name": "Njål Sørland", "gender": "male" },
+        { "name": "Ivar Hembre", "gender": "male" },
+        { "name": "Magne Slaatsveen", "gender": "male" }
       ]
     },
     {
@@ -17,7 +20,13 @@
       "date": "2024-09-30",
       "official": true,
       "contestants": [
-        { "name": "William Fagerstrøm", "gender": "male", "title": "Faxekonge" }
+        { "name": "William Fagerstrøm", "gender": "male", "title": "Faxekonge" },
+        { "name": "Markus Johansen", "gender": "male" },
+        { "name": "Henrik Moe Wæhre", "gender": "male" },
+        { "name": "Are Tœmmerås", "gender": "male" },
+        { "name": "Erik David Thiis-Evensen", "gender": "male" },
+        { "name": "Hallvard Vatnar Olsen", "gender": "male" },
+        { "name": "Lars Tangen Hestnes", "gender": "male" }
       ]
     },
     {

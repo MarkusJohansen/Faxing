@@ -282,7 +282,10 @@ October 2022, which Markus Johansen won in fifteen minutes and was thereby taken
 council as **Kong Markus I**. The Lore tells the same night (`src/components/Lore.tsx`, chapter
 «Pilgrimsreisene til Hoddevik»).
 
-**Encoded as** `legacy-2022-10-29`, official: Markus Johansen `Faxekonge` at 15:00.
+**Encoded as** `legacy-2022-10-29`, official: Markus Johansen `Faxekonge` at 15:00, and the three
+elders who were at the table with him, Njål Sørland, Ivar Hembre and Magne Slaatsveen, with no
+time. The Council names them as Fyrst Njål, Hertug Ivar and Grev Magne; the encoding keeps the
+names the record gives, not the titles the Lore gave them later.
 
 The record states fifteen minutes, not a clock time, so the encoding stores the duration and
 leaves `finishedAt` empty, as every row here does. It is the older of the two rows from before
@@ -298,11 +301,13 @@ and being crowned **Faxekonge William I**. Ten days later, at Konsilet på A4, d
 was founded and he handed the crown on rather than keep it (`src/components/Lore.tsx`,
 chapter «Gjenfødelsen»).
 
-**Encoded as** `legacy-2024-09-30`, official: William Fagerstrøm `Faxekonge`, no duration.
+**Encoded as** `legacy-2024-09-30`, official: William Fagerstrøm `Faxekonge`, and the six who
+faxed with him — Markus Johansen, Henrik Moe Wæhre, Are Tœmmerås, Erik David Thiis-Evensen,
+Hallvard Vatnar Olsen and Lars Tangen Hestnes — every one of them with no time.
 
 The Lore states «under 10 minutter» — a bound, not a time — so no duration is stored and the
-row reads `Tid ukjent`. The seven others who faxed that night are named in no record, so the
-row holds the one name it has.
+row reads `Tid ukjent` for all seven. The Lore counts «hele 8 deltakere» that night, so one of
+the eight is still named in no record; the row holds the seven names there are.
 
 ---
 
