@@ -426,6 +426,7 @@
 .scroll-panel,
 .event-card,
 .contestant-card,
+.succession-card,
 .global-timer,
 .confirm-reset,
 .admin-add-attendee,
@@ -1779,6 +1780,190 @@
   color: var(--moon-50);
 }
 
+/* ── The succession of crowns ─────────────────────────── */
+.succession-legend {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-top: .8rem;
+  font-size: .9rem;
+  color: var(--mist-200);
+}
+
+.succession-lines {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.succession-line {
+  min-width: 0;
+  padding: 1rem;
+  background: var(--night-800);
+  border: var(--px) solid var(--night-900);
+  box-shadow: inset var(--px) var(--px) 0 var(--stone-500);
+}
+
+.succession-heading {
+  display: flex;
+  align-items: baseline;
+  gap: .45rem;
+  margin-bottom: .8rem;
+  padding-bottom: .4rem;
+  border-bottom: var(--px) solid var(--stone-500);
+}
+
+.succession-heading .royal-crown {
+  font-size: 1.1rem;
+}
+
+.succession-title {
+  font-family: var(--font-title);
+  font-weight: 400;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--moon-50);
+}
+
+.succession-count {
+  margin-left: auto;
+  font-family: var(--font-num);
+  font-size: 1.1rem;
+  color: var(--mist-200);
+  white-space: nowrap;
+}
+
+.succession-void {
+  font-size: .95rem;
+  color: var(--mist-200);
+}
+
+/* The road from crowning to crowning: a dithered line with a lantern at each holder. */
+.succession-thread {
+  --thread-inset: 1.6rem;
+  --thread-mark: .3rem;
+  position: relative;
+  margin: 0;
+  padding: .2rem 0 .2rem var(--thread-inset);
+  list-style: none;
+}
+
+.succession-thread::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--thread-mark);
+  width: calc(var(--px) * 2);
+  background: conic-gradient(var(--stone-400) 25%, transparent 0 50%, var(--stone-400) 0 75%, transparent 0) 0 0 / calc(var(--px) * 2) calc(var(--px) * 2);
+}
+
+.succession-node {
+  position: relative;
+  margin-bottom: .6rem;
+}
+
+.succession-node:last-child {
+  margin-bottom: 0;
+}
+
+.succession-node::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--thread-mark) - var(--thread-inset) - var(--px));
+  top: 1.1rem;
+  width: calc(var(--px) * 4);
+  height: calc(var(--px) * 4);
+  background: var(--stone-400);
+  border: var(--px) solid var(--night-900);
+  box-shadow: inset var(--px) var(--px) 0 var(--stone-500);
+}
+
+/* The reigning holder is the lit lantern at the end of the line. */
+.succession-node-reigning::before {
+  background: var(--lantern-400);
+  box-shadow: inset var(--px) var(--px) 0 var(--flame-200);
+}
+
+.succession-card {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  width: 100%;
+  min-height: 44px;
+  padding: .6rem .7rem;
+  font-family: var(--font-body);
+  font-size: .95rem;
+  text-align: left;
+  color: var(--moon-100);
+  cursor: pointer;
+}
+
+.succession-card:hover {
+  background-color: var(--stone-600);
+}
+
+.succession-node-reigning .succession-card {
+  --bevel-hi: var(--moon-100);
+  background-color: var(--stone-600);
+}
+
+.succession-card-date {
+  font-family: var(--font-num);
+  font-size: 1.05rem;
+  color: var(--mist-200);
+}
+
+.succession-card-name {
+  font-size: 1.1rem;
+  color: var(--moon-50);
+  overflow-wrap: anywhere;
+}
+
+.succession-card-legacy {
+  font-size: .8rem;
+  color: var(--mist-200);
+}
+
+.succession-card-event {
+  font-size: .9rem;
+  color: var(--mist-200);
+  overflow-wrap: anywhere;
+}
+
+.succession-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .4rem;
+  margin-top: .25rem;
+}
+
+.succession-card-time {
+  font-family: var(--font-num);
+  font-size: 1.1rem;
+  color: var(--moon-50);
+}
+
+.succession-card-reigning {
+  padding: 0 .3rem;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--night-900);
+  background: var(--lantern-400);
+  border: var(--px) solid var(--night-900);
+}
+
+/* Three threads side by side need the desk; on a narrower screen each takes a row. */
+@media (max-width: 900px) {
+  .succession-lines {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── One event ────────────────────────────────────────── */
 .event-view,
 .event-loading,
@@ -2219,12 +2404,13 @@
   }
 
   .main-nav {
+    flex-wrap: wrap;
     padding-left: .25rem;
     padding-right: .25rem;
   }
 
   .nav-link {
-    flex: 1;
+    flex: 1 1 30%;
     padding: .4rem .3rem;
   }
 

@@ -8,7 +8,7 @@ export type Title =
   | 'Hestemann'
 
 /** 'loft' is the Faxepave's own screen; the nav offers it only while the session is held. */
-export type Screen = 'home' | 'room' | 'history' | 'event' | 'loft' | 'laws' | 'lore'
+export type Screen = 'home' | 'room' | 'history' | 'event' | 'succession' | 'loft' | 'laws' | 'lore'
 
 export interface Contestant {
   id: string
