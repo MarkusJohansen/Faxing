@@ -33,14 +33,25 @@ SHALL NOT fill any line.
 
 ### Requirement: Each crown has its own line, in a fixed order
 
-The system SHALL show three lines in the order king, queen, monarch. A line with no crowned
-holder SHALL still be shown, with a sentence stating that no holder of that crown has been
-crowned yet.
+The system SHALL order the reign lines king, queen, monarch. The king's line and the queen's
+line SHALL always be shown, and a line with no crowned holder SHALL state that no holder of
+that crown has been crowned yet. The monarch's line SHALL be hidden while it holds no reign,
+and SHALL appear, in its place in the order, once the chronicle records a `Faxemonark`.
 
-#### Scenario: Three lines, always
+#### Scenario: The king's and queen's lines show even when empty
 
-- **WHEN** the succession screen is open and the chronicle holds an official Faxing that crowned a king and a queen
-- **THEN** the king's line and the queen's line show their reigns, and the monarch's line states that no monarch has been crowned yet
+- **WHEN** the succession screen is open and no official Faxing has crowned a queen
+- **THEN** the queen's line is shown, and states that no queen has been crowned yet
+
+#### Scenario: The monarch's line waits for a monarch
+
+- **WHEN** the succession screen is open and the chronicle records no `Faxemonark` at any official Faxing
+- **THEN** no monarch's line is shown, and the king's and queen's lines are shown as usual
+
+#### Scenario: The monarch's line appears with the first monarch
+
+- **WHEN** an official Faxing records a `Faxemonark`
+- **THEN** the monarch's line is shown, after the queen's line, with that reign in it
 
 ### Requirement: Every crowned holder is one reign
 
@@ -127,3 +138,34 @@ screen SHALL show an empty state instead of three empty lines.
 
 - **WHEN** the chronicle holds no official Faxing
 - **THEN** the screen says the succession is empty yet, and shows no lines
+
+### Requirement: The founding of den andre orden is marked
+
+Each shown line SHALL draw a dashed rule where the first order ended and den andre began: on
+10 October 2024, the day Konsilet på A4 founded the order, shown in the archive's date form.
+The rule SHALL be drawn only in a line that holds a reign from before the founding, because a
+divider with nothing above it separates nothing. It SHALL stand before the first reign dated on
+or after the founding, and after the line's last reign when the new order has not reached that
+crown. A founding crowns nobody, so it is no chronicle row: the rule SHALL NOT require an event.
+
+#### Scenario: The line crosses at the founding
+
+- **WHEN** the king's line holds a reign from 2022 and one from 2025
+- **THEN** the dashed rule stands between them, labelled `Den andre orden stiftes` with
+  10 October 2024
+
+#### Scenario: A line that begins with the new order
+
+- **WHEN** a line's every reign is dated after the founding
+- **THEN** that line draws no rule
+
+#### Scenario: A line the new order has not reached
+
+- **WHEN** a line holds only reigns dated before the founding
+- **THEN** the rule closes the line, after its last reign
+
+#### Scenario: A reign on the founding day
+
+- **WHEN** a Faxing is filed at the noon of 10 October 2024, the instant the archive files a
+  day on
+- **THEN** its reign stands below the rule, not above it

@@ -36,6 +36,32 @@ export interface CrownLine {
 }
 
 /**
+ * The day den andre orden was founded at Konsilet på A4. A founding is not a Faxing: it crowned
+ * nobody and has no contestants, so it is no chronicle row, and it is stored here rather than in
+ * the database. Noon UTC is how a dated event without a clock time is filed, so a Faxing that
+ * day falls on the same side of the line the archive puts it.
+ */
+export const SECOND_ORDER_FOUNDED = Date.UTC(2024, 9, 10, 12)
+
+/** One thing on a crown line: a reign, or the dashed mark where den andre orden begins. */
+export type LineNode = { kind: 'reign'; reign: Reign } | { kind: 'founding'; date: number }
+
+/**
+ * A line's reigns with the founding mark among them. The mark is drawn only in a line that holds
+ * a reign from before the founding: a divider with nothing above it separates nothing. It stands
+ * before the first reign of the new order, or after the last of the old when the new order has
+ * not yet reached that crown — the line then ends by saying where the order it reads became this
+ * one.
+ */
+export function lineNodes(reigns: Reign[], founded: number = SECOND_ORDER_FOUNDED): LineNode[] {
+  const nodes: LineNode[] = reigns.map(reign => ({ kind: 'reign', reign }))
+  const firstNew = reigns.findIndex(reign => reign.date >= founded)
+  if (firstNew === 0 || reigns.length === 0) return nodes
+  nodes.splice(firstNew === -1 ? reigns.length : firstNew, 0, { kind: 'founding', date: founded })
+  return nodes
+}
+
+/**
  * The succession: who has held each crown, and at which Faxing, oldest first. Derived from the
  * published chronicle on every call; nothing is stored, so a correction to a closed Faxing
  * corrects the line on the next load.
@@ -60,6 +86,17 @@ export function successionLines(events: FaxingEvent[]): CrownLine[] {
     crown,
     reigns: oldestFirst.flatMap(event => crowned(event, crown, event.id === reigningId)),
   }))
+}
+
+/**
+ * The lines the screen shows. Kongerekka and Dronningrekka are always shown, even empty: a night
+ * with no queen still has a queen's line, and the line says so. Monarkrekka is shown only once
+ * the chronicle records a `Faxemonark`, which is awarded to a contestant recorded as neither man
+ * nor woman and can therefore go unawarded for many Faxinger. An empty third line reads as a
+ * page that failed to load; an absent one reads as a crown the Order has not yet given.
+ */
+export function shownLines(lines: CrownLine[]): CrownLine[] {
+  return lines.filter(line => line.crown !== 'Faxemonark' || line.reigns.length > 0)
 }
 
 /** The latest official Faxing; on a shared date the one the chronicle lists first. */

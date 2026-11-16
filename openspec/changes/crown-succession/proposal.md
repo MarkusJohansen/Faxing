@@ -12,8 +12,8 @@ they held it. This change adds that view.
 ## What Changes
 
 - A new screen, **Kongerekka**, reached from the main nav.
-- It shows three lines, in this order: **Kongerekka**, **Dronningrekka**, **Monarkrekka** —
-  one per crown the code awards.
+- It shows a line per crown, in this order: **Kongerekka**, **Dronningrekka**, **Monarkrekka**.
+  The first two are always shown; **Monarkrekka** is hidden until a monarch has been crowned.
 - Each line is a threaded timeline in the look of *Faxingens Krønike*: one node per crowned
   holder, oldest first. Each node names the Faxing and its date, the holder, and the
   holder's finishing time. The holder crowned at the most recent official Faxing is marked
@@ -22,8 +22,8 @@ they held it. This change adds that view.
   a past champion. The old record's `Erkekonge` fills the king's line; `Kronprins` and
   `Prins` do not.
 - A node opens the Faxing it belongs to.
-- An empty line says so; when no official Faxing has crowned anyone, the screen says the
-  succession is empty yet.
+- An empty line says so; the monarch's line is hidden while it is empty, and when no official
+  Faxing has crowned anyone, the screen says the succession is empty yet.
 - Everything is derived on the client from the chronicle the app already loads. No API,
   storage, column or dependency is added.
 
@@ -39,7 +39,9 @@ they held it. This change adds that view.
 ## Impact
 
 - `src/lib/succession.ts` (new): a pure selector from the chronicle to three crown lines,
-  with a runnable `node` check beside it in the style of `tribute.demo.ts`.
+  `shownLines`, which decides that the monarch's line waits for a monarch, and `lineNodes`,
+  which plants the founding mark, with a runnable `node` check beside it in the style of
+  `tribute.demo.ts`.
 - `src/components/CrownSuccession.tsx` (new): the screen. Props only, no state.
 - `src/App.tsx` and `src/types.ts`: the `succession` screen and its nav tab.
 - `src/App.css`: the lines and their nodes, in the thread look of `.chronology`, with

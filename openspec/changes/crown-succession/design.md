@@ -64,10 +64,29 @@ tick does not rebuild it. The thread is the `.chronology` pattern: a dithered ve
 a marker per node, cards built from the existing `.event-card` slab. No new colour is
 introduced.
 
-**Three lines always, even when one is empty.** Kongerekka, Dronningrekka and Monarkrekka are
-the three crowns the code awards. Hiding an empty line would make a night with no queen look
-like a night with no queen's *line*; the line says "ingen dronning er kronet ennu" instead.
-When no official Faxing has crowned anyone, the whole screen is the empty state.
+**Two lines always; the monarch's line waits for a monarch.** Kongerekka and Dronningrekka
+are the crowns a Faxing gives to a man and to a woman, and almost any night crowns one or the
+other, so an empty line there says "ingen dronning er kronet ennu" and is worth reading.
+`Faxemonark` goes to a contestant recorded as neither, so Monarkrekka can stay empty across
+many Faxinger; an empty third column reads as a page that failed to load, not as a fact about
+the Order. It is hidden until it holds a reign, and appears in its place the moment one is
+recorded. When no official Faxing has crowned anyone, the whole screen is the empty state.
+The rule lives in `shownLines` (`src/lib/succession.ts`), not in the component, so the check
+beside it can guard it.
+
+**The founding is a mark in the line, not a row in the chronicle.** Den andre orden was
+founded at Konsilet på A4 on 10 October 2024, and a reader of the lines cannot see where the
+first order ends without being told. The founding crowned nobody and named no contestants, so
+it is no Faxing and cannot be a `faxing_events` row; it is a constant, `SECOND_ORDER_FOUNDED`,
+and the line draws a dashed rule at it. Noon UTC is the instant chosen because that is how the
+archive files a day whose record states no clock time: a Faxing held that same day then falls on
+the new side of the line the archive puts it on, instead of depending on a time zone.
+
+**The mark is drawn only where a reign precedes it.** Kongerekka is the only line holding a
+reign from the first order, so it is the only one that crosses the founding; a line that begins
+with the new order gains no rule, because a divider with nothing above it marks nothing. The
+rule belongs to `lineNodes` (`src/lib/succession.ts`) rather than to the component, so the
+check beside it can guard both the day and its place in the line.
 
 ## Risks / Trade-offs
 

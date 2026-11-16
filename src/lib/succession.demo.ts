@@ -2,7 +2,7 @@
  * Runnable check of the crown succession. No framework:  npm run check:rules
  * Each assertion names the silent failure it guards.
  */
-import { CROWN_ORDER, successionLines } from './succession.ts'
+import { CROWN_ORDER, SECOND_ORDER_FOUNDED, lineNodes, shownLines, successionLines } from './succession.ts'
 import { reigningTribute } from './tribute.ts'
 import type { ArchivedContestant, FaxingEvent, RecordedTitle } from '../types'
 import type { CrownLine } from './succession.ts'
@@ -30,9 +30,72 @@ function assertLine(label: string, events: FaxingEvent[], expected: string) {
   console.log(`ok  ${label}`)
 }
 
+function assertShown(label: string, events: FaxingEvent[], expected: string) {
+  const actual = show(shownLines(successionLines(events)))
+  if (actual !== expected) throw new Error(`${label}: expected ${expected}, was ${actual}`)
+  console.log(`ok  ${label}`)
+}
+
+/** The king's line as its nodes: `year:name`, with `|` for the founding mark. */
+const kingNodes = (events: FaxingEvent[]) => {
+  const king = successionLines(events).find(line => line.crown === 'Faxekonge')
+  if (king === undefined) throw new Error('the succession has no king\'s line')
+  return lineNodes(king.reigns)
+    .map(node => node.kind === 'founding' ? '|' : `${yearOf(node.reign.date)}:${node.reign.name}`)
+    .join(' ')
+}
+
+function assertNodes(label: string, events: FaxingEvent[], expected: string) {
+  const actual = kingNodes(events)
+  if (actual !== expected) throw new Error(`${label}: expected ${expected}, was ${actual}`)
+  console.log(`ok  ${label}`)
+}
+
+const LAST_OF_THE_FIRST_ORDER = faxing('Eldsterådets siste', day(2022, 10, 29), true, [crowned('Markus', 'Faxekonge')])
+
 function demo() {
   // Guards the shape: three lines, always in king, queen, monarch order, even with nothing to show.
   assertLine('no Faxinger, three empty lines', [], EMPTY)
+  // Guards against showing a Monarkrekka nobody has filled: Faxemonark can go unawarded for a
+  // long run, and an empty third line reads as a page that failed to load. The other two lines
+  // stay, because a night with no queen still has a queen's line.
+  assertShown('an empty Monarkrekka is hidden, while the king\'s and queen\'s empty lines stay', [],
+    'Faxekonge - | Faxedronning -')
+
+  // Guards against hiding the line once a monark exists: the crown earned is the crown shown.
+  assertShown('a Monarkrekka with a monark is shown',
+    [faxing('Sommer', day(2024, 5, 1), true, [crowned('Kim', 'Faxemonark')])],
+    'Faxekonge - | Faxedronning - | Faxemonark 2024:Kim*')
+
+  // Guards the day itself: the divider must fall on 10 October 2024, the day Konsilet på A4
+  // founded den andre orden, at the noon the archive files a dateless day on.
+  if (SECOND_ORDER_FOUNDED !== Date.UTC(2024, 9, 10, 12)) throw new Error(`the founding mark is on the wrong day: ${new Date(SECOND_ORDER_FOUNDED).toISOString()}`)
+  console.log('ok  the founding mark falls on 10 October 2024')
+
+  // Guards the mark's place: the first order's last two kings, the dashed line, then the new
+  // order's first king.
+  assertNodes('the founding mark stands between the first order\'s kings and the second\'s',
+    [LAST_OF_THE_FIRST_ORDER, faxing('Gjenfødelsen', day(2024, 9, 30), true, [crowned('William', 'Faxekonge')]),
+     faxing('Første Faxeting', day(2025, 4, 15), true, [crowned('Scott', 'Erkekonge')])],
+    '2022:Markus 2024:William | 2025:Scott')
+
+  // Guards against a divider with nothing above it: a crown that begins with the second order
+  // is all new, and the mark would separate nothing.
+  assertNodes('no founding mark in a line whose first reign is from the second order',
+    [faxing('Første Faxeting', day(2025, 4, 15), true, [crowned('Scott', 'Erkekonge')])],
+    '2025:Scott')
+
+  // Guards the end of a line the new order has not reached: the mark still says where the
+  // order that line reads ended.
+  assertNodes('the founding mark ends a line that holds no reign from the second order',
+    [LAST_OF_THE_FIRST_ORDER],
+    '2022:Markus |')
+
+  // Guards the boundary itself: a Faxing filed at the noon of the founding day is the new
+  // order's, and stands below the mark rather than above it.
+  assertNodes('a Faxing on the founding day stands below the mark',
+    [LAST_OF_THE_FIRST_ORDER, faxing('Stiftelsesdagen', Date.UTC(2024, 9, 10, 12), true, [crowned('Scott', 'Erkekonge')])],
+    '2022:Markus | 2024:Scott')
 
   // Guards against crowning a garden party: only official Faxinger fill a line or hold the mark.
   assertLine('an unofficial Faxing fills no line, and never holds the reigning mark',
