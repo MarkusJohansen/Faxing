@@ -739,6 +739,9 @@
 .laws-screen {
   /* The seal's width, shared with the room reserved for it below the scroll. */
   --seal-w: clamp(76px, 16vw, 104px);
+  /* The unrolling: a beat to see the scroll rolled, then the time it takes to open. */
+  --unroll-wait: .35s;
+  --unroll-time: 1.5s;
   max-width: 760px;
   margin: 0 auto;
   /* The seal hangs past the foot of the scroll and needs the room to do it: 43 rows of a
@@ -750,9 +753,27 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  /* Wide enough for a roll's cap to stand out at each end of the sheet. */
-  padding: 0 calc(var(--px) * 4);
+  /* Wide enough for a roll's cap to stand out at each end of the sheet, and at the foot the
+     room the foot roll stands in: it is placed, not in the flow, so that it can travel. */
+  padding: 0 calc(var(--px) * 4) calc(var(--px) * 6);
   margin-top: 1.5rem;
+}
+
+/* The foot roll's carriage: a box laid exactly over the scroll, with the roll at its bottom
+   edge and the seal hanging below. Moving this box moves both, and a translate in percent is
+   measured against the scroll's own height. */
+.laws-foot {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.laws-roll.laws-roll-foot {
+  position: absolute;
+  top: calc(100% - var(--px) * 6);
+  left: calc(var(--px) * 4);
+  right: calc(var(--px) * 4);
 }
 
 .laws-roll {
@@ -883,6 +904,8 @@
   width: var(--seal-w);
   height: auto;
   transform: translateX(-50%);
+  /* It hangs by its cords, so it swings from where they leave the roll. */
+  transform-origin: 50% 0;
 }
 
 /* The crest is pressed into the wax: grey and multiplied, so its light parts vanish into the wax. */
@@ -2483,6 +2506,45 @@
   @keyframes crown-bob {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-2px); }
+  }
+
+  /* 10 Bud: the scroll is rolled open each time the page is shown. The foot roll's carriage
+     starts up under the head roll and comes down, while the sheet is uncovered behind it at
+     the same pace: the writing stays where it is, as on paper. Nothing is laid out again, so
+     the page below does not move. Both share one step count, or the paper's edge would show
+     past the roll between steps. The carriage starts two pixels short of the sheet's cut
+     edge, so the roll always covers it. */
+  @keyframes laws-unroll {
+    from { clip-path: inset(0 0 100% 0); }
+    to { clip-path: inset(0); }
+  }
+  @keyframes laws-descend {
+    from { transform: translateY(calc(-100% + var(--px) * 10)); }
+  }
+  /* The foot roll starts thick with the wound sheet and thins as it pays it out. */
+  @keyframes laws-unwind {
+    from { height: calc(var(--px) * 12); }
+  }
+  /* The cords leave the roll at its underside, so the seal hangs lower while the roll is thick. */
+  @keyframes laws-seal-hang {
+    from { top: 100%; }
+  }
+  /* Once the roll stops, the seal still has its swing in it. */
+  @keyframes laws-seal-sway {
+    0%, 100% { transform: translateX(-50%) rotate(0deg); }
+    20% { transform: translateX(-50%) rotate(5deg); }
+    45% { transform: translateX(-50%) rotate(-3.5deg); }
+    70% { transform: translateX(-50%) rotate(2deg); }
+    88% { transform: translateX(-50%) rotate(-1deg); }
+  }
+
+  .laws-sheet { animation: laws-unroll var(--unroll-time) steps(32) var(--unroll-wait) backwards; }
+  .laws-foot { animation: laws-descend var(--unroll-time) steps(32) var(--unroll-wait) backwards; }
+  .laws-roll-foot { animation: laws-unwind var(--unroll-time) steps(6) var(--unroll-wait) backwards; }
+  .laws-seal {
+    animation:
+      laws-seal-hang var(--unroll-time) steps(6) var(--unroll-wait) backwards,
+      laws-seal-sway 1.6s ease-in-out calc(var(--unroll-time) + var(--unroll-wait));
   }
 
   .contestant-item.honoured-saint,

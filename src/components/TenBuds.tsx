@@ -43,11 +43,15 @@ export default function TenBuds() {
         </ol>
         <p className="laws-colophon">Sendt med brevdue til Backlog, og siden aldrig forandret.</p>
       </div>
-      <div className="laws-roll laws-roll-foot" aria-hidden="true" />
-      <svg className="laws-seal" viewBox="0 0 32 43" shapeRendering="crispEdges" role="img" aria-label="Faxepavens segl i rødt voks, med ordenens skjold" focusable="false">
-        {inked(rowsToGrid(PAPAL_SEAL))}
-        <image className="laws-seal-crest" href={crest} x="5" y="16" width="22" height="22" />
-      </svg>
+      {/* The foot roll and the seal travel together when the scroll is rolled open, in a box as
+          tall as the scroll, so "its own height" is the distance they have to go. */}
+      <div className="laws-foot">
+        <div className="laws-roll laws-roll-foot" aria-hidden="true" />
+        <svg className="laws-seal" viewBox="0 0 32 43" shapeRendering="crispEdges" role="img" aria-label="Faxepavens segl i rødt voks, med ordenens skjold" focusable="false">
+          {inked(rowsToGrid(PAPAL_SEAL))}
+          <image className="laws-seal-crest" href={crest} x="5" y="16" width="22" height="22" />
+        </svg>
+      </div>
     </article>
   </section>
 }
