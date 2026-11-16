@@ -34,6 +34,23 @@
   --blood-700: #3d1412;
   --blood-500: #8c2a22;
   --blood-300: #e0685a;
+  /*
+   * The scriptorium: the 10 Bud page is written on parchment rather than on stone, so it
+   * carries its own materials — paper, ink, brass, steel and wax. Nothing else uses these.
+   */
+  --parchment-100: #fef7e5; /* the shield's argent, and the ribbon's cloth */
+  --parchment-200: #f5e8ca; /* the sheet itself */
+  --parchment-300: #e6d6b0; /* the sheet's aged edge, and the rolls' lit faces */
+  --parchment-400: #cbb68c; /* the rolls' shadow, and the hairline ruling on the sheet */
+  --ink-900:       #2e2621; /* the writing, and the can on the shield */
+  --brass-400:     #bfa785; /* the lions, and the hilts of the swords */
+  --brass-600:     #898076; /* the same brass where the light does not reach */
+  --steel-400:     #9b9894; /* the blades */
+  --steel-200:     #cdc9c1; /* their bright edges */
+  --wax-300:       #ef8e77; /* the seal, where the light strikes it */
+  --wax-500:       #df5d48; /* the wax */
+  --wax-700:       #b65343; /* the wax in a hollow */
+  --wax-900:       #7d3125; /* the cut of the seal's impression */
 
   --font-title: 'Jacquard 24', 'Jersey 20', serif;
   --font-body:  'Jersey 20', 'Trebuchet MS', sans-serif;
