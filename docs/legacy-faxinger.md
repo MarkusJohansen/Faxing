@@ -137,12 +137,17 @@ Hestemann
 Andrej (er klart det suger)
 ```
 
-**Encoded as** `legacy-2025-09-10`, official. The message names no titles, so none are stored:
-no crown, no knighthood, and no invented `Faxeridder`. Andrej is a `Hestemann`; the aside "(er
-klart det suger)" is kept here and not in his name.
+**Encoded as** `legacy-2025-09-10`, official. The message names only one title, `Hestemann` for
+Andrej. The organizer named that night's queen, whose time made her the first woman to finish and
+whom the table had left untitled: Sofie Sagmo is stored as `Faxedronning`. No other title is
+stored — no second crown, no knighthood, and no invented `Faxeridder` for the rest, whose races the
+rules would have turned into a long list of knights nobody recorded. The aside
+"(er klart det suger)" is kept here and not in Andrej's name.
 
 The list gives `34:55 Ouren`, by surname only. The organizer supplied the full name, so the
-fixture stores `Magnus Ouren`; this file keeps what was posted.
+fixture stores `Magnus Ouren`; this file keeps what was posted. The same holds for `26:23 Sofie`,
+whose surname the organizer supplied, so the fixture stores `Sofie Sagmo` and this file keeps the
+one name the message had.
 
 Jennings' time is `0:56,66`. The chronicle stores 56 660 ms and the table shows `0:56`, because
 the archive displays whole seconds. The hundredths are in the record and in the fixture.
@@ -307,14 +312,15 @@ row holds the one name it has.
   the duration. Nothing fabricates an instant, and a duration is never accumulated.
 - **Times.** `m:ss` and `m:ss,cc` are converted once, to milliseconds inside the hour. Nothing
   outside the hour is accepted.
-- **Titles.** Stored exactly as the record states them, never recomputed. Where a record names
-  no title, the title is empty. `Hestemann` is stored with `disqualified` true, as the live
-  flow does.
+- **Titles.** Stored as the record states them, never recomputed. A night whose record names no
+title has none, unless the organizer spoke for it: the 10 September 2025 queen is stored because he
+named her, and no title is ever worked out from the times. `Hestemann` is stored with
+`disqualified` true, as the live flow does.
 - **Names.** Verbatim, including `Sofie venninna til Eline`, `Halvis (kvartvar)`, `Magnus byrkj`,
   `Ådne svendsrrud`, `Sivert vårum` and `Kristian numme`. A nickname is what the record says;
-  correcting one would make the fixture disagree with this file. The one exception is `Ouren`,
-  which was written by surname only: the organizer supplied Magnus Ouren, and the fixture stores
-  the full name.
+  correcting one would make the fixture disagree with this file. Two names are exceptions, where
+the list had only a surname or a first name: the organizer supplied `Magnus Ouren` and
+  `Sofie Sagmo`, and the fixture stores those.
 - **Gender.** The messages never state one, and a name does not settle it. The fixture stores the
   gender the organizer supplied instead of one read off the list: Kvartvar (written
   `Halvis (kvartvar)`, the parenthesis is his first name), Magnus Ouren, Sepanta Ganjei and

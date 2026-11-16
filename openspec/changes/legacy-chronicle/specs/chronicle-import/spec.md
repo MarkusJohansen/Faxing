@@ -113,8 +113,9 @@ fail validation.
 
 ### Requirement: An imported title is transcribed, never derived
 The seeder SHALL store the title the record states for each contestant and SHALL NOT call
-`rankContestants()`. A record that names no titles SHALL leave every title empty rather than
-invent one.
+`rankContestants()`. The record is the posted message, and where the organizer has supplied a
+title the message omitted, that SHALL be stored as part of the record, with the record file naming
+it as the organizer's. A night with neither SHALL leave every title empty rather than invent one.
 
 Chronicle titles SHALL therefore be allowed to include `Erkekonge`, `Kronprins` and `Prins`,
 names the live rules do not award, and the archive SHALL show them as recorded. `Hestemann`
@@ -126,9 +127,13 @@ with it.
 - **THEN** Scott Jennings is `Erkekonge`, William is `Kronprins`, Martin Rustad is `Prins`, and
   the remaining finishers carry no title
 
-#### Scenario: A silent record
-- **WHEN** the 10 September 2025 event, whose message names no titles, is seeded
-- **THEN** none of its finishers carries a title, and the archive shows no crown for that event
+#### Scenario: The night the organizer named a queen
+- **WHEN** the 10 September 2025 event is seeded, whose message names no crown
+- **THEN** Sofie Sagmo is `Faxedronning`, and no other finisher that night carries a title
+
+#### Scenario: A night with no crown
+- **WHEN** the 4 November 2025 event is seeded
+- **THEN** Eman Hashami is its only titled contestant, a `Hestemann`, and no one carries a crown
 
 #### Scenario: An unofficial Faxing
 - **WHEN** the office event is seeded

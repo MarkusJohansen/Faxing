@@ -56,13 +56,16 @@ a server is always a look.
 
 The old Faxings were run under rules the application does not implement: the 15 April 2025
 record has an `Erkekonge`, a `Kronprins` and a `Prins`, and the 10 September 2025 record names
-no titles at all. Recomputing with today's `rankContestants()` would produce a tidy table that
-contradicts the record — a crown for a contest whose message never mentions one, and no crown
-for the Faxeting that founded the order.
+only a `Hestemann`. Recomputing with today's `rankContestants()` would produce a tidy table that
+contradicts the record — a knight for every finisher whose race the message never mentions, and
+no crown for the Faxeting that founded the order.
 
-So the fixture stores the title each record states, `close` keeps storing the titles the rules
-produced, and the archive shows what was stored. `rankContestants()` is still the only function
-that decides a title for a running contest, and it is not called for an imported event.
+So the fixture stores the title each record states. The record is the posted message, and where
+the organizer has supplied a title it omitted, that is the record too: the 10 September 2025
+queen is stored because the organizer named her, and the file says so beside the message. Nothing
+is worked out from the times. `close` keeps storing the titles the rules produced, and the archive
+shows what was stored. `rankContestants()` is still the only function that decides a title for a
+running contest, and it is not called for an imported event.
 
 ### No invented finish instants
 

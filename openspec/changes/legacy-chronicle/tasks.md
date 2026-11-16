@@ -7,6 +7,9 @@
 - [x] 1.5 Add the two nights that survive only as the operator's word: 29 October 2022
   (Eldsterådets siste faxing, Markus Johansen at 15:00) and 30 September 2024 (Gjenfødelsen,
   William Fagerstrøm, no duration because the record states only «under 10 minutter»)
+- [x] 1.6 Store the queen of 10 September 2025, Sofie Sagmo, whom the message left untitled: the
+  organizer named her, and her time made her the first woman to finish. No other title is derived
+  for that night.
 
 ## 2. The seeder
 

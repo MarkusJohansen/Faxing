@@ -14,7 +14,8 @@ door into `faxing_events` is closing a room, which a Faxing held before rooms ex
   present is left alone, so re-running never undoes a Faxepave's correction, and an event is held
   back while the chronicle already has another on the same day. Nothing files automatically.
 - **Recorded titles**: a chronicle entry carries the titles its record states, including names
-  the current rules no longer award (`Erkekonge`, `Kronprins`, `Prins`). Nothing is derived.
+  the current rules no longer award (`Erkekonge`, `Kronprins`, `Prins`), and the titles the
+  organizer supplied for a night whose message omitted them. Nothing is derived.
 - **An unknown duration**: a finisher whose old record states no time is shown as `Tid ukjent`,
   not as `0:00` and not as a Hestemann.
 - **A frozen order**: when a record has a gap, the table keeps the order the record was written
