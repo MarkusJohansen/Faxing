@@ -62,6 +62,22 @@ export function lineNodes(reigns: Reign[], founded: number = SECOND_ORDER_FOUNDE
 }
 
 /**
+ * The one Faxing the archive's dashed founding line stands above: the newest Faxing of the first
+ * order, found only when at least one Faxing of the second sits above it. The archive lists
+ * newest first, so that event is where the two orders meet; without a Faxing on the newer side
+ * the mark would separate nothing, the same rule the crown lines follow.
+ */
+export function foundingBoundary(events: readonly { id: string; date: number }[], founded: number = SECOND_ORDER_FOUNDED): string | null {
+  let boundary: { id: string; date: number } | null = null
+  let newer = false
+  for (const event of events) {
+    if (event.date >= founded) { newer = true; continue }
+    if (boundary === null || event.date > boundary.date) boundary = event
+  }
+  return newer && boundary !== null ? boundary.id : null
+}
+
+/**
  * The succession: who has held each crown, and at which Faxing, oldest first. Derived from the
  * published chronicle on every call; nothing is stored, so a correction to a closed Faxing
  * corrects the line on the next load.

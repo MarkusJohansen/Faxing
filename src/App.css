@@ -1684,6 +1684,32 @@
   padding-left: 2.25rem;
 }
 
+/* The dashed founding line across the run of Faxinger: the same mark the crown lines carry, so
+   the archive and the succession say the founding the same way. It is drawn from the same
+   constant, so the two can never disagree about the day. */
+.chronology-founding {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .35rem .5rem;
+  margin: .1rem 0 .6rem;
+  padding: .5rem 0 0;
+  border-top: calc(var(--px) * 2) dashed var(--stone-400);
+}
+
+.chronology-founding-label {
+  font-family: var(--font-title);
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--moon-100);
+}
+
+.chronology-founding-date {
+  font-family: var(--font-num);
+  font-size: .95rem;
+  color: var(--mist-200);
+}
+
 /* The road through the years: a dithered line with a lantern at each year. */
 .chronology::before {
   content: '';
