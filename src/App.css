@@ -2744,10 +2744,6 @@
     0%, 100% { box-shadow: 0 0 .3rem color-mix(in srgb, var(--honour) 25%, transparent); }
     50% { box-shadow: 0 0 1rem color-mix(in srgb, var(--honour) 60%, transparent); }
   }
-  @keyframes glyph-twinkle {
-    0%, 100% { transform: scale(1) rotate(0deg); opacity: .8; }
-    50% { transform: scale(1.4) rotate(20deg); opacity: 1; }
-  }
   @keyframes gold-sweep {
     from { background-position: 160% 0; }
     to { background-position: -60% 0; }
@@ -2816,9 +2812,6 @@
   .results-table .result-row.honoured:nth-child(3n) { animation-delay: -2.4s; }
 
   .suggestion-btn.honoured:not(:disabled) { animation: chip-glow 3.2s ease-in-out infinite; }
-
-  .honoured-saint .honour-mark { animation: ember-flicker 3.6s ease-in-out infinite; }
-  .honoured-saint .honour-mark > span[aria-hidden] { animation: glyph-twinkle 2.4s ease-in-out infinite; }
 
   .honoured-champion .honour-mark { animation: ember-flicker 2.6s ease-in-out infinite; }
   .honoured-champion .honour-mark > span[aria-hidden] { animation: crown-bob 2.6s ease-in-out infinite; }
