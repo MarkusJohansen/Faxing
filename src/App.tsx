@@ -45,6 +45,10 @@ export default function App() {
   // eventId appear on its next poll. The effect keys on eventId, so it fires on that
   // transition only, not on every tick after it.
   const closedEventId = room?.eventId ?? null
+  // A room closed before the start is dissolved, not chronicled, so no eventId appears and the
+  // effect above never fires: without this the lobby would sit on a closed room and every
+  // action in it would be refused.
+  const dissolved = room?.closedAt != null && room.eventId === null
   useEffect(() => {
     if (!closedEventId) return
     loadEvents().then(setEvents).catch(error => console.error('Could not load events:', error))
@@ -82,8 +86,9 @@ export default function App() {
         {roomError && <p className="form-error room-error" role="alert">{roomError}</p>}
         {!room && !roomError && <section className="event-loading scroll-panel"><h2 className="panel-title">Henter Rommet…</h2></section>}
         {!room && roomError && <section className="event-loading scroll-panel"><button className="back-link" onClick={leaveRoom}>Tilbake til samlingsstedet</button></section>}
-        {room && room.startedAt === null && <RoomLobby room={room} events={events} onAct={act} />}
+        {room && room.startedAt === null && !dissolved && <RoomLobby room={room} events={events} onAct={act} />}
         {room && room.startedAt !== null && <Arena title={room.title} code={room.code} rankedContestants={ranked} contestStartTime={room.startedAt} now={roomNow} durationMs={CONTEST_DURATION_MS} you={room.you} onAct={act} />}
+        {room && dissolved && <section className="event-loading scroll-panel"><p className="eyebrow">Rommet er stengt</p><h2 className="panel-title">Faxingen ble aldri holdt</h2><p className="panel-desc">Verten stengte Rommet før kampen begynte. Intet ble skrevet i krøniken.</p><button className="back-link" onClick={leaveRoom}>Tilbake til samlingsstedet</button></section>}
       </>}
       {screen === 'history' && <History events={events} onOpen={event => { setActiveEventId(event.id); setScreen('event') }} onCreate={addPastEvent} isAdmin={isAdmin} />}
       {screen === 'event' && !activeEvent ? <section className="event-loading scroll-panel"><p className="eyebrow">Faxe Ordenens arkiv</p><h2 className="panel-title">Henter Faxing…</h2><button className="back-link" onClick={() => setScreen('history')}>Tilbake til krøniken</button></section> : screen === 'event' && activeEvent && <EventErrorBoundary><EventView event={activeEvent} events={events} isAdmin={isAdmin} onBack={() => navigate('history')} onSave={saveAdminEvent} onDelete={removeAdminEvent} /></EventErrorBoundary>}
