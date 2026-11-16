@@ -25,8 +25,10 @@ it is the only writer.
 instead of nothing. The rule that a title is decided only by `rankContestants()` is untouched;
 what changed is who may put the resulting record in the public list.
 
-Every close is filed for approval, including an official room and a room the Faxepave closed
-themselves. The alternative — publish when the closer holds a Faxepave session — was rejected:
+Every close of a started room is filed for approval, including an official room and a room the
+Faxepave closed themselves; a room closed before its start is dissolved with no entry at all
+(`openspec/changes/dissolve-unstarted-room`). The alternative — publish when the closer holds a
+Faxepave session — was rejected:
 it makes the rule depend on which device pressed the button, so the same room would be reviewed
 or not depending on who was holding the phone at the end of an hour of drinking. A uniform gate
 also means the loft always shows what happened, which is what the operator asked for.

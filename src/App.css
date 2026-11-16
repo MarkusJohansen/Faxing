@@ -737,6 +737,12 @@
   margin: 0 auto;
 }
 
+/* Under the start button, quieter: beginning is the usual act, dissolving is not. */
+.lobby-footer {
+  margin-top: 1rem;
+  text-align: center;
+}
+
 .enlist-form {
   margin-top: 1.25rem;
 }

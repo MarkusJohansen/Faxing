@@ -103,6 +103,31 @@ async function createRoom(db: Db, req: VercelRequest, body: Body) {
   return fail(503, 'Fant ingen ledig Kode. Prøv påny.')
 }
 
+/**
+ * Closes a room. A started contest is ranked from its recorded instants and frozen into the
+ * chronicle; a room that never began is only marked closed, because a Faxing with no finish is
+ * not history. Does not check the role: every caller is already behind `requireHost()`.
+ */
+async function closeRoom(db: Db, room: RoomRow, now: number) {
+  if (room.started_at === null) {
+    await db.query('UPDATE faxing_rooms SET closed_at = $2 WHERE id = $1', [room.id, new Date(now)])
+    return
+  }
+  const begun = room.started_at.getTime()
+  const members = await db.query<MemberRow>(`SELECT ${MEMBER_COLUMNS} FROM faxing_room_members WHERE room_id = $1 ORDER BY joined_at, id`, [room.id])
+  // Titles are derived here, from the rows: no client can file one. Closing ends the contest, so
+  // it is ranked as if the hour had run out; ranked at `now`, anybody still drinking at an early
+  // close was filed with no title and their unfinished time.
+  const ranked = rankContestants(members.rows.map(toContestant), begun, Math.max(now, begun + CONTEST_DURATION_MS), CONTEST_DURATION_MS)
+  const eventId = randomUUID()
+  // Filed for the Faxepave, not straight into the chronicle: a room is raised by anyone who holds
+  // a phone, so the archive takes the close as a proposal. The record itself is frozen here,
+  // titles included; approval decides only whether the chronicle lists it, and a refusal keeps
+  // the row so nothing recorded at close is destroyed.
+  await db.query("INSERT INTO faxing_events (id, title, event_date, official, attendees, status) VALUES ($1, $2, $3, $4, $5::jsonb, 'pending')", [eventId, room.title, new Date(begun), room.official, JSON.stringify(ranked)])
+  await db.query('UPDATE faxing_rooms SET closed_at = $2, event_id = $3 WHERE id = $1', [room.id, new Date(now), eventId])
+}
+
 /** Applies one action to a locked room. Returns a token when the action issues one. */
 async function act(db: PoolClient, room: RoomRow, action: unknown, body: Body, you: RoomRole, now: number): Promise<string | undefined> {
   if (room.closed_at) fail(409, 'Rommet er stengt.')
@@ -189,19 +214,7 @@ async function act(db: PoolClient, room: RoomRow, action: unknown, body: Body, y
     }
     case 'close': {
       requireHost()
-      const begun = requireStarted()
-      const members = await db.query<MemberRow>(`SELECT ${MEMBER_COLUMNS} FROM faxing_room_members WHERE room_id = $1 ORDER BY joined_at, id`, [room.id])
-      // Titles are derived here, from the rows: no client can file one. Closing ends the
-      // contest, so it is ranked as if the hour had run out; ranked at `now`, anybody still
-      // drinking at an early close was filed with no title and their unfinished time.
-      const ranked = rankContestants(members.rows.map(toContestant), begun, Math.max(now, begun + CONTEST_DURATION_MS), CONTEST_DURATION_MS)
-      const eventId = randomUUID()
-      // Filed for the Faxepave, not straight into the chronicle: a room is raised by anyone who
-      // holds a phone, so the archive takes the close as a proposal. The record itself is frozen
-      // here, titles included; approval decides only whether the chronicle lists it, and a
-      // refusal keeps the row so nothing recorded at close is destroyed.
-      await db.query(`INSERT INTO faxing_events (id, title, event_date, official, attendees, status) VALUES ($1, $2, $3, $4, $5::jsonb, 'pending')`, [eventId, room.title, new Date(begun), room.official, JSON.stringify(ranked)])
-      await db.query('UPDATE faxing_rooms SET closed_at = $2, event_id = $3 WHERE id = $1', [room.id, new Date(now), eventId])
+      await closeRoom(db, room, now)
       return
     }
     default:

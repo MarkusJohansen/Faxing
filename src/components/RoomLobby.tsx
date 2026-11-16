@@ -18,6 +18,8 @@ const GENDER_ICON: Record<Gender, string> = { male: '♂', female: '♀', other:
 export default function RoomLobby({ room, events, onAct }: Props) {
   const [name, setName] = useState('')
   const [gender, setGender] = useState<Gender>('male')
+  // Two taps, as in the arena: closing a room is not undoable.
+  const [confirmDissolve, setConfirmDissolve] = useState(false)
   const people = useMemo(() => peopleOf(events, LORE_NAMES), [events])
   const honours = useMemo(() => honoursOf(events), [events])
   const suggestions = suggest(name, people, room.members.map(member => member.name))
@@ -80,7 +82,12 @@ export default function RoomLobby({ room, events, onAct }: Props) {
         </div>}
 
         {host
-          ? <button className="medieval-btn start-btn" onClick={() => onAct('start')} disabled={room.members.length === 0}>Begynn kampen</button>
+          ? <>
+            <button className="medieval-btn start-btn" onClick={() => onAct('start')} disabled={room.members.length === 0}>Begynn kampen</button>
+            <div className="lobby-footer">{!confirmDissolve
+              ? <button className="back-link" onClick={() => setConfirmDissolve(true)}>Steng Rommet</button>
+              : <div className="confirm-reset"><p>Er I visse? Rommet stenges, og ingen Faxing skrives i krøniken.</p><div className="confirm-btns"><button className="medieval-btn danger-btn" onClick={() => onAct('close')}>Ja, steng Rommet</button><button className="medieval-btn" onClick={() => setConfirmDissolve(false)}>Fortsett</button></div></div>}</div>
+          </>
           : <p className="admin-only-note">Kun Verten kan begynne kampen.</p>}
       </div>
     </div>

@@ -2,8 +2,10 @@
 
 ### Requirement: Closing a room files the Faxing for approval
 
-A closed room SHALL produce a chronicle entry that the Faxepave has not yet approved, and the
-entry SHALL NOT appear in the chronicle until the Faxepave approves it. Closing SHALL still
+A started room that is closed SHALL produce a chronicle entry that the Faxepave has not yet
+approved, and the entry SHALL NOT appear in the chronicle until the Faxepave approves it. A room
+that is closed before it began is dissolved with no entry: there is no finish to file
+(`openspec/changes/dissolve-unstarted-room`). Closing SHALL still
 derive the titles on the server from the recorded finishes, and SHALL store the room's title,
 official flag and start instant with the entry. A closed room SHALL accept no further changes.
 
@@ -21,7 +23,7 @@ official flag and start instant with the entry. A closed room SHALL accept no fu
 #### Scenario: The closed room is closed to action
 
 - **WHEN** any action other than a read is sent against a closed room
-- **THEN** it is refused with `409 Rommet er allereie stengt.`, as before
+- **THEN** it is refused with `409 Rommet er stengt.`, as before
 
 ### Requirement: The chronicle lists approved Faxinger only
 

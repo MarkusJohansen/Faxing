@@ -158,7 +158,7 @@ Each line is something you can confirm with one command or one search.
   passes for any change you touched.
 - Either a spec covers what you changed, or you said in one line why you skipped it.
 - Titles are decided only by `rankContestants()`, called from the board (`src/App.tsx`) and
-  from `close` (`api/rooms.ts:197`): `grep -rn "rankContestants(" src api server` lists those
+  from `closeRoom` (`api/rooms.ts:121`): `grep -rn "rankContestants(" src api server` lists those
   call sites and nothing else outside the demo.
 - No duration is accumulated: `grep -rn "setInterval" src` shows only the clock tick and the
   room poll, and neither increments a counter.

@@ -64,6 +64,10 @@ export default function App() {
   // transition only, not on every tick after it. The filed Faxing is not in the chronicle yet,
   // so it is read by its own link and kept aside; the room's devices still get their result.
   const closedEventId = room?.eventId ?? null
+  // A room closed before the start is dissolved, not chronicled, so no eventId appears and the
+  // effect above never fires: without this the lobby would sit on a closed room and every
+  // action in it would be refused.
+  const dissolved = room?.closedAt != null && room.eventId === null
   useEffect(() => {
     if (!closedEventId) return
     loadEvents().then(setEvents).catch(error => console.error('Could not load events:', error))
@@ -118,8 +122,9 @@ export default function App() {
         {roomError && <p className="form-error room-error" role="alert">{roomError}</p>}
         {!room && !roomError && <section className="event-loading scroll-panel"><h2 className="panel-title">Henter Rommet…</h2></section>}
         {!room && roomError && <section className="event-loading scroll-panel"><button className="back-link" onClick={leaveRoom}>Tilbake til samlingsstedet</button></section>}
-        {room && room.startedAt === null && <RoomLobby room={room} events={events} onAct={act} />}
+        {room && room.startedAt === null && !dissolved && <RoomLobby room={room} events={events} onAct={act} />}
         {room && room.startedAt !== null && <Arena title={room.title} code={room.code} rankedContestants={ranked} contestStartTime={room.startedAt} now={roomNow} durationMs={CONTEST_DURATION_MS} you={room.you} onAct={act} />}
+        {room && dissolved && <section className="event-loading scroll-panel"><p className="eyebrow">Rommet er stengt</p><h2 className="panel-title">Faxingen ble aldri holdt</h2><p className="panel-desc">Verten stengte Rommet før kampen begynte. Intet ble skrevet i krøniken.</p><button className="back-link" onClick={leaveRoom}>Tilbake til samlingsstedet</button></section>}
       </>}
       {screen === 'history' && <History events={events} onOpen={event => { setActiveEventId(event.id); setScreen('event') }} onCreate={() => navigate('loft')} isAdmin={isAdmin} />}
       {screen === 'loft' && isAdmin && <FaxepaveLoft awaiting={awaiting} onDecide={decideAdminEvent} onOpen={event => { setActiveEventId(event.id); setScreen('event') }} onDelete={id => removeAdminEvent(id, 'loft')} onFile={filePastEvent} />}
