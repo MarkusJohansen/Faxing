@@ -885,6 +885,13 @@
   transform: translateX(-50%);
 }
 
+/* The crest is pressed into the wax: grey and multiplied, so its light parts vanish into the wax. */
+.laws-seal-crest {
+  filter: grayscale(1) contrast(1.3);
+  mix-blend-mode: multiply;
+  opacity: .8;
+}
+
 /* ── Registration ─────────────────────────────────────── */
 .registration-screen {
   max-width: 860px;

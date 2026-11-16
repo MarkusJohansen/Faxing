@@ -1,5 +1,6 @@
 // The order's law as the Eldsterådet set it down: ten buds on a parchment scroll, under the
 // arms of the order and the Faxepave's seal. Static copy — nothing here is derived or fetched.
+import crest from '../assets/faxing-crest.svg'
 import { ORDER_ARMS, PAPAL_SEAL } from '../lib/orderArms'
 import { rowsToGrid } from '../lib/pixelArt'
 import { inked } from '../lib/pixelInk'
@@ -26,7 +27,6 @@ const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 
 export default function TenBuds() {
   return <section className="laws-screen">
-    <p className="eyebrow">Faxe Ordenens lover</p>
     <article className="laws-scroll" aria-labelledby="laws-title">
       <div className="laws-roll laws-roll-head" aria-hidden="true" />
       <div className="laws-sheet">
@@ -46,6 +46,7 @@ export default function TenBuds() {
       <div className="laws-roll laws-roll-foot" aria-hidden="true" />
       <svg className="laws-seal" viewBox="0 0 32 43" shapeRendering="crispEdges" role="img" aria-label="Faxepavens segl i rødt voks, med ordenens skjold" focusable="false">
         {inked(rowsToGrid(PAPAL_SEAL))}
+        <image className="laws-seal-crest" href={crest} x="5" y="16" width="22" height="22" />
       </svg>
     </article>
   </section>
