@@ -2076,6 +2076,23 @@
   color: var(--moon-50);
 }
 
+/* The Faxepave writes a time as the two counts a record keeps, so the cell holds two boxes that
+   share the column rather than a parsed clock. */
+.results-table .admin-time {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  min-width: 0;
+}
+
+.admin-time-input {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: .2rem .25rem;
+  font-size: .95rem;
+  text-align: center;
+}
+
 .results-table .result-shame {
   font-family: var(--font-body);
   font-size: .95rem;

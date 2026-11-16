@@ -179,5 +179,45 @@ export default function EventView({ event, events, isAdmin, startEditing = false
 }
 
 function ResultRow({ contestant: c, honour, index, isAdmin, onUpdate }: { contestant: ArchivedContestant; honour: Honour | undefined; index: number; isAdmin: boolean; onUpdate: (id: string, patch: Partial<ArchivedContestant>) => void }) {
-  return <div className={`result-row ${c.title === 'Faxekonge' || c.title === 'Faxedronning' ? 'royal-result' : ''} ${honour ? `honoured honoured-${honour}` : ''}`} role="row"><span className="result-rank" role="cell">{index + 1}</span><span className="result-person" role="cell">{isAdmin ? <input aria-label={`Navn på deltager ${index + 1}`} className="medieval-input admin-name-input" value={c.name} onChange={event => onUpdate(c.id, { name: event.target.value })} /> : <><span className="result-name">{canonicalName(c.name)}</span>{canonicalName(c.name) !== c.name.trim() && <span className="result-written">skrevet «{c.name}»</span>}</>}{isLegacyTitle(c.title) && <span className="result-recorded-title">{c.title}</span>}<HonourMark honour={honour} />{isAdmin &&<select aria-label={`Status for ${c.name}`} className="medieval-input admin-status" value={c.disqualified ? 'out' : hasFinished(c) ? 'done' : 'active'} onChange={event => onUpdate(c.id, event.target.value === 'out' ? { disqualified: true, finishedAt: null } : event.target.value === 'done' ? { disqualified: false, finishedAt: c.finishedAt ?? Date.now() } : { disqualified: false, finishedAt: null })}><option value="done">Fullbragt</option><option value="active">Ikke fullbragt</option><option value="out">Hestemann</option></select>}</span><strong role="cell" className={c.title === 'Hestemann' || c.disqualified ? 'result-time result-shame' : 'result-time'}>{c.title === 'Hestemann' || c.disqualified ? 'Hestemann' : formatDuration(c.elapsed)}</strong><span role="cell" className="result-title">{c.title === 'Faxekonge' || c.title === 'Faxedronning' ? <span className="royal-crown" aria-label={c.title} title={c.title}>♛</span> : '—'}</span></div>
+  return <div className={`result-row ${c.title === 'Faxekonge' || c.title === 'Faxedronning' ? 'royal-result' : ''} ${honour ? `honoured honoured-${honour}` : ''}`} role="row"><span className="result-rank" role="cell">{index + 1}</span><span className="result-person" role="cell">{isAdmin ? <input aria-label={`Navn på deltager ${index + 1}`} className="medieval-input admin-name-input" value={c.name} onChange={event => onUpdate(c.id, { name: event.target.value })} /> : <><span className="result-name">{canonicalName(c.name)}</span>{canonicalName(c.name) !== c.name.trim() && <span className="result-written">skrevet «{c.name}»</span>}</>}{isLegacyTitle(c.title) && <span className="result-recorded-title">{c.title}</span>}<HonourMark honour={honour} />{isAdmin &&<select aria-label={`Status for ${c.name}`} className="medieval-input admin-status" value={c.disqualified ? 'out' : hasFinished(c) ? 'done' : 'active'} onChange={event => onUpdate(c.id, event.target.value === 'out' ? { disqualified: true, finishedAt: null } : event.target.value === 'done' ? { disqualified: false, finishedAt: c.finishedAt ?? Date.now() } : { disqualified: false, finishedAt: null })}><option value="done">Fullbragt</option><option value="active">Ikke fullbragt</option><option value="out">Hestemann</option></select>}</span><TimeCell contestant={c} isAdmin={isAdmin} onUpdate={onUpdate} /><span role="cell" className="result-title">{c.title === 'Faxekonge' || c.title === 'Faxedronning' ? <span className="royal-crown" aria-label={c.title} title={c.title}>♛</span> : '—'}</span></div>
+}
+
+/**
+ * The drinking time in a row: the record's word for it, or the Faxepave's boxes while that row can
+ * be corrected. A hestemann holds no time, so the cell says so and offers nothing to write.
+ */
+function TimeCell({ contestant, isAdmin, onUpdate }: { contestant: ArchivedContestant; isAdmin: boolean; onUpdate: (id: string, patch: Partial<ArchivedContestant>) => void }) {
+  if (contestant.disqualified || contestant.title === 'Hestemann') return <strong role="cell" className="result-time result-shame">Hestemann</strong>
+  if (isAdmin) return <TimeEditor contestant={contestant} onUpdate={onUpdate} />
+  return <strong role="cell" className="result-time">{formatDuration(contestant.elapsed)}</strong>
+}
+
+/**
+ * The recorded time, written by the Faxepave. Minutes and seconds are two boxes because that is
+ * how the record states a time, and the form that adds a participant asks for one in the same
+ * shape. Emptying both is not zero: it is `Tid ukjent`, the state five of the old rows are in, so
+ * correcting a time and stating that there is none are the same edit.
+ *
+ * The boxes hold their own text until the edit ends, so a keystroke that is not a count cannot
+ * empty or invent a duration: the row keeps the time it last held.
+ */
+function TimeEditor({ contestant, onUpdate }: { contestant: ArchivedContestant; onUpdate: (id: string, patch: Partial<ArchivedContestant>) => void }) {
+  const stored = contestant.elapsed !== null && Number.isFinite(Number(contestant.elapsed)) ? Number(contestant.elapsed) : null
+  const [minutes, setMinutes] = useState(stored === null ? '' : String(Math.floor(stored / 60_000)))
+  const [seconds, setSeconds] = useState(stored === null ? '' : String(Math.floor(stored / 1_000) % 60))
+  const write = (nextMinutes: string, nextSeconds: string) => {
+    setMinutes(nextMinutes)
+    setSeconds(nextSeconds)
+    const blank = nextMinutes.trim() === '' && nextSeconds.trim() === ''
+    // Minutes alone are still a time; the seconds are then simply zero.
+    const minuteCount = nextMinutes.trim() === '' ? 0 : Number(nextMinutes)
+    const secondCount = nextSeconds.trim() === '' ? 0 : Number(nextSeconds)
+    const isCount = Number.isInteger(minuteCount) && minuteCount >= 0 && Number.isInteger(secondCount) && secondCount >= 0 && secondCount <= 59
+    if (!blank && !isCount) return
+    onUpdate(contestant.id, { elapsed: blank ? null : (minuteCount * 60 + secondCount) * 1_000 })
+  }
+  return <span className="result-time admin-time" role="cell">
+    <input className="medieval-input admin-time-input" inputMode="numeric" placeholder="min" aria-label={`Minutter for ${contestant.name}`} value={minutes} onChange={event => write(event.target.value, seconds)} />
+    <input className="medieval-input admin-time-input" inputMode="numeric" placeholder="sek" aria-label={`Sekunder for ${contestant.name}`} value={seconds} onChange={event => write(minutes, event.target.value)} />
+  </span>
 }
