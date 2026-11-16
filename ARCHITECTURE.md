@@ -76,7 +76,7 @@ The SPA has no router. The room code lives in the URL query (`?rom=CODE`,
 | State | Where | What it is |
 | --- | --- | --- |
 | `roomCode` | `src/App.tsx:33` | The room in view. Null on the home and archive screens. |
-| `screen` | `src/App.tsx:34` | `home`, `room`, `history`, `event`, `loft`, or `lore`. |
+| `screen` | `src/App.tsx:34` | `home`, `room`, `history`, `event`, `loft`, `laws`, or `lore`. |
 | `events` | `src/App.tsx:36` | The chronicle: published Faxinger only, loaded from `/api/events`. Everything counted or crowned reads this list. |
 | `awaiting` | `src/App.tsx:39` | What this device may see outside the chronicle: the Faxepave's queue, or the one Faxing the room on this phone just closed. Never counted, never crowned. |
 | `now` | `src/App.tsx:43` | The local clock. Re-read every 500 ms (`src/App.tsx:50`). |

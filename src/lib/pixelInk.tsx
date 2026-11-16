@@ -15,6 +15,18 @@ export const INKS: Record<string, string> = {
   E: '--ember-500',
   L: '--lantern-400',
   F: '--flame-200',
+  // The 10 Bud page's own materials: the parchment it is written on, its ink, the brass and
+  // steel of the arms, and the wax of the Faxepave's seal. `orderArms` draws only with these.
+  P: '--parchment-100',
+  G: '--brass-400',
+  D: '--brass-600',
+  S: '--steel-400',
+  T: '--steel-200',
+  K: '--ink-900',
+  R: '--wax-300',
+  W: '--wax-500',
+  U: '--wax-700',
+  Q: '--wax-900',
 }
 
 /** A grid as SVG paths, one per ink. */

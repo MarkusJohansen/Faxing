@@ -731,6 +731,160 @@
   padding-left: 1.2rem;
 }
 
+/* ── 10 Bud: the order's law, on parchment ────────────────
+   The one screen that is not stone. A paper sheet is wound around two rolls, and the
+   Faxepave's seal hangs off the foot of the scroll by its cords. Every colour comes from
+   the scriptorium tokens in index.css: the paper, its ink, the brass and steel of the arms,
+   and the wax. The arms and the seal are pixel art bound to those tokens like the rest. */
+.laws-screen {
+  /* The seal's width, shared with the room reserved for it below the scroll. */
+  --seal-w: clamp(76px, 16vw, 104px);
+  max-width: 760px;
+  margin: 0 auto;
+  /* The seal hangs past the foot of the scroll and needs the room to do it: 43 rows of a
+     32-wide grid, and a little air, so no width can clip its point. */
+  padding-bottom: calc(var(--seal-w) * 1.3438);
+}
+
+.laws-scroll {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* Wide enough for a roll's cap to stand out at each end of the sheet. */
+  padding: 0 calc(var(--px) * 4);
+  margin-top: 1.5rem;
+}
+
+.laws-roll {
+  position: relative;
+  z-index: 2;
+  height: calc(var(--px) * 6);
+  background: var(--parchment-300);
+  border: var(--px) solid var(--ink-900);
+  box-shadow: inset 0 var(--px) 0 var(--parchment-100), inset 0 calc(var(--px) * -3) 0 var(--parchment-400);
+}
+
+/* The caps: the rod is wider than the sheet, so the sheet reads as wound around it. */
+.laws-roll::before,
+.laws-roll::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--px) * -1);
+  bottom: calc(var(--px) * -1);
+  width: calc(var(--px) * 2);
+  background: var(--parchment-200);
+  border: var(--px) solid var(--ink-900);
+  box-shadow: inset 0 calc(var(--px) * -2) 0 var(--parchment-400);
+}
+
+.laws-roll::before {
+  right: 100%;
+}
+
+.laws-roll::after {
+  left: 100%;
+}
+
+.laws-sheet {
+  position: relative;
+  z-index: 1;
+  /* The rolls wind over the sheet's ends, so nothing shows a cut edge. */
+  margin: calc(var(--px) * -2) 0;
+  padding: clamp(1.6rem, 5vw, 2.6rem) clamp(1rem, 6vw, 3.2rem) clamp(1.8rem, 5vw, 2.8rem);
+  color: var(--ink-900);
+  background: var(--parchment-200);
+  border-left: var(--px) solid var(--ink-900);
+  border-right: var(--px) solid var(--ink-900);
+  /* Paper darkens where it has been handled. Two hard bands, not a gradient. */
+  box-shadow: inset calc(var(--px) * 4) 0 0 var(--parchment-300), inset calc(var(--px) * -4) 0 0 var(--parchment-300);
+}
+
+/* A scribe's ruling: one hairline inside the sheet's edge. */
+.laws-sheet::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--px) * 3);
+  border: 1px solid var(--parchment-400);
+  pointer-events: none;
+}
+
+.laws-arms {
+  display: block;
+  width: clamp(150px, 34vw, 208px);
+  height: auto;
+  margin: 0 auto clamp(.6rem, 2vw, 1rem);
+}
+
+.laws-title {
+  font-family: var(--font-title);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 10vw, 3.8rem);
+  line-height: 1;
+  text-align: center;
+  color: var(--ink-900);
+}
+
+/* Rubrication: a manuscript writes its heading in red, and so does this one. */
+.laws-rubric {
+  margin-top: .6rem;
+  font-family: var(--font-title);
+  font-size: 1.3rem;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--wax-700);
+}
+
+.laws-list {
+  display: grid;
+  gap: .9rem;
+  max-width: 32rem;
+  margin: clamp(1.4rem, 4vw, 2rem) auto 0;
+  padding-top: clamp(1.2rem, 3vw, 1.6rem);
+  border-top: 1px solid var(--parchment-400);
+  list-style: none;
+}
+
+.laws-list li {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  gap: .7rem;
+  align-items: baseline;
+}
+
+.laws-number {
+  font-family: var(--font-title);
+  font-size: 1.45rem;
+  line-height: 1;
+  text-align: right;
+  color: var(--wax-700);
+}
+
+.laws-bud {
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+.laws-colophon {
+  margin-top: clamp(1.4rem, 4vw, 2rem);
+  font-family: var(--font-title);
+  font-size: 1.15rem;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--wax-700);
+}
+
+/* Hung from the foot roll: the cords' first rows are behind the roll, and the wax falls
+   below the page. z-index 1 keeps the roll (2) in front of them. */
+.laws-seal {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: calc(100% - var(--px) * 6);
+  width: var(--seal-w);
+  height: auto;
+  transform: translateX(-50%);
+}
+
 /* ── Registration ─────────────────────────────────────── */
 .registration-screen {
   max-width: 860px;
@@ -2155,6 +2309,20 @@
   .loft-file-form label:first-child,
   .loft-file-form .medieval-btn {
     grid-column: 1 / -1;
+  }
+
+  /* 10 Bud: the sheet keeps a page's margin, and the numbers a narrower gutter. */
+  .laws-title {
+    font-size: 2.5rem;
+  }
+
+  .laws-sheet {
+    padding: 1.4rem 1rem 1.6rem;
+  }
+
+  .laws-list li {
+    grid-template-columns: 1.6rem 1fr;
+    gap: .5rem;
   }
 }
 
