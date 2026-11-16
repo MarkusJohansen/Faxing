@@ -100,6 +100,7 @@ The full path, with the permission table and the schema, is in
 | Workstream | Status | What backs it |
 | --- | --- | --- |
 | Shared rooms: join by code, host runs the start and corrections, close into the chronicle | **Built** | `openspec/changes/faxing-rooms` marked complete; commit `3dd4747` |
+| A room the host never came back to: closed after its hour, a lobby nobody entered dissolved after a day | **Built**, API driven against Postgres, screens not walked | `api/rooms.ts` (`reapAbandonedRooms`), `openspec/changes/auto-close-abandoned-room` |
 | The Faxepave's loft: a closed Faxing waits for the operator's word before it enters the chronicle | **Built** | `api/events.ts` (`status`), `src/components/FaxepaveLoft.tsx`, `openspec/changes/faxepave-loft` |
 | Titles: five crowns and their rules, with the forfeit and late-finish cases | **Built** | `npm run check:rules`, all passing |
 | The chronicle: archive list, event view, Faxepave-only edits | **Built** | `api/events.ts`, `src/components/History.tsx`, `EventView.tsx` |

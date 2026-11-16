@@ -42,7 +42,7 @@ Nothing here is worth an abstraction that pays off "later".
 npm install               # once
 npm run dev               # Vite on :5173, with the /api handlers mounted (needs DATABASE_URL)
 npm run typecheck         # tsc for app and server, strict: run before every commit
-npm run check:rules       # the demos in src/lib (titling, tribute, people, suggestions, honours) under node
+npm run check:rules       # the demos in src/lib (clock, titling, tribute, people, suggestions, honours) under node
 npm run build             # typecheck app, build dist/, bundle server.cjs
 npm start                 # node server.cjs on :8080 (needs dist/, DATABASE_URL, FAXEPAVE_PASSWORD)
 ```
@@ -158,7 +158,7 @@ Each line is something you can confirm with one command or one search.
   passes for any change you touched.
 - Either a spec covers what you changed, or you said in one line why you skipped it.
 - Titles are decided only by `rankContestants()`, called from the board (`src/App.tsx`) and
-  from `closeRoom` (`api/rooms.ts:121`): `grep -rn "rankContestants(" src api server` lists those
+  from `closeRoom` (`api/rooms.ts:128`): `grep -rn "rankContestants(" src api server` lists those
   call sites and nothing else outside the demo.
 - No duration is accumulated: `grep -rn "setInterval" src` shows only the clock tick and the
   room poll, and neither increments a counter.
