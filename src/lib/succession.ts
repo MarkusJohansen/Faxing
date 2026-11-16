@@ -62,19 +62,12 @@ export function lineNodes(reigns: Reign[], founded: number = SECOND_ORDER_FOUNDE
 }
 
 /**
- * The one Faxing the archive's dashed founding line stands above: the newest Faxing of the first
- * order, found only when at least one Faxing of the second sits above it. The archive lists
- * newest first, so that event is where the two orders meet; without a Faxing on the newer side
- * the mark would separate nothing, the same rule the crown lines follow.
+ * Whether a Faxing was held under den første orden — before the founding. The archive draws those
+ * cards in older stone, so the run of Faxinger shows at a glance which nights are ancient. A
+ * Faxing held on the founding day itself is not ancient: it is the first night of the new order.
  */
-export function foundingBoundary(events: readonly { id: string; date: number }[], founded: number = SECOND_ORDER_FOUNDED): string | null {
-  let boundary: { id: string; date: number } | null = null
-  let newer = false
-  for (const event of events) {
-    if (event.date >= founded) { newer = true; continue }
-    if (boundary === null || event.date > boundary.date) boundary = event
-  }
-  return newer && boundary !== null ? boundary.id : null
+export function isOfTheFirstOrder(date: number, founded: number = SECOND_ORDER_FOUNDED): boolean {
+  return date < founded
 }
 
 /**

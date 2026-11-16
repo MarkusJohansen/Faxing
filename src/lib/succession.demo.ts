@@ -2,7 +2,7 @@
  * Runnable check of the crown succession. No framework:  npm run check:rules
  * Each assertion names the silent failure it guards.
  */
-import { CROWN_ORDER, SECOND_ORDER_FOUNDED, foundingBoundary, lineNodes, shownLines, successionLines } from './succession.ts'
+import { CROWN_ORDER, SECOND_ORDER_FOUNDED, isOfTheFirstOrder, lineNodes, shownLines, successionLines } from './succession.ts'
 import { reigningTribute } from './tribute.ts'
 import type { ArchivedContestant, FaxingEvent, RecordedTitle } from '../types'
 import type { CrownLine } from './succession.ts'
@@ -146,23 +146,14 @@ function demo() {
   if (missing[0].reigns[0]?.elapsed !== null) throw new Error('a record with no time must stay null, not 0:00')
   console.log('ok  a record with no time stays null')
 
-  // Guards the archive's dashed founding line: it must stand above the newest Faxing of the first
-  // order, and only when a Faxing of the second is above it. The archive lists newest first.
-  const chronicle = [
-    { id: 'nyest', date: day(2026, 10, 10) },
-    { id: 'ny', date: day(2025, 4, 15) },
-    { id: 'siste-av-forste', date: day(2024, 9, 30) },
-    { id: 'gjenfodelsen', date: day(2022, 10, 29) },
-  ]
-  if (foundingBoundary(chronicle) !== 'siste-av-forste') throw new Error(`the founding mark sits above ${foundingBoundary(chronicle)}`)
-  console.log('ok  the archive marks the founding above the newest Faxing of the first order')
-  if (foundingBoundary(chronicle.slice(0, 2)) !== null) throw new Error('a chronicle of the second order alone must carry no founding mark')
-  console.log('ok  no founding mark when every Faxing is of the second order')
-  if (foundingBoundary(chronicle.slice(2)) !== null) throw new Error('a chronicle of the first order alone must carry no founding mark')
-  console.log('ok  no founding mark when every Faxing is of the first order')
-  // Guards the midnight edge: a Faxing filed at noon on the founding day is of the second order.
-  if (foundingBoundary([{ id: 'stiftelsesdagen', date: SECOND_ORDER_FOUNDED }, { id: 'gammel', date: day(2022, 10, 29) }]) !== 'gammel') throw new Error('the founding day itself must sit on the second order\'s side of the mark')
-  console.log('ok  the founding day itself is of the second order')
+  // Guards the archive's colour for the ancient nights: everything before the founding is of the
+  // first order, and the founding day itself belongs to the new one.
+  if (!isOfTheFirstOrder(day(2024, 9, 30))) throw new Error('a Faxing before the founding must be of the first order')
+  console.log('ok  a Faxing before the founding is of the first order')
+  if (isOfTheFirstOrder(SECOND_ORDER_FOUNDED)) throw new Error('the founding day itself is of the second order, not the first')
+  console.log('ok  a Faxing on the founding day is not of the first order')
+  if (isOfTheFirstOrder(day(2025, 4, 15))) throw new Error('a Faxing after the founding must not be of the first order')
+  console.log('ok  a Faxing after the founding is not of the first order')
 
   // Guards the line order itself, whatever the data.
   const order = successionLines([]).map(line => line.crown).join(',')

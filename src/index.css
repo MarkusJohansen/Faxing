@@ -35,6 +35,16 @@
   --blood-500: #8c2a22;
   --blood-300: #e0685a;
   /*
+   * Antiquity: the Faxinger of den første orden, the nights before den andre orden was founded.
+   * Older stone and tarnished brass, so the archive's run of cards shows which nights are ancient.
+   * Nothing else uses these.
+   */
+  --ancient-800: #232b1f;
+  --ancient-600: #3b4130;
+  --ancient-400: #7d7a4d;
+  --ancient-300: #b0a878;
+  --ancient-100: #e3dcbd;
+  /*
    * The scriptorium: the 10 Bud page is written on parchment rather than on stone, so it
    * carries its own materials — paper, ink, brass, steel and wax. Nothing else uses these.
    */
