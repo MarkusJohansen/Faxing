@@ -3,6 +3,24 @@
   "source": "docs/legacy-faxinger.md",
   "events": [
     {
+      "id": "legacy-2022-10-29",
+      "title": "Eldsterådets siste faxing",
+      "date": "2022-10-29",
+      "official": true,
+      "contestants": [
+        { "name": "Markus Johansen", "gender": "male", "title": "Faxekonge", "time": "15:00" }
+      ]
+    },
+    {
+      "id": "legacy-2024-09-30",
+      "title": "Gjenfødelsen",
+      "date": "2024-09-30",
+      "official": true,
+      "contestants": [
+        { "name": "William Fagerstrøm", "gender": "male", "title": "Faxekonge" }
+      ]
+    },
+    {
       "id": "legacy-2025-04-15",
       "title": "Det første Faxetinget",
       "date": "2025-04-15",

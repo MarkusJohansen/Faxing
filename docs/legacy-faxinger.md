@@ -1,8 +1,9 @@
 # De gamle faxingene
 
-Five Faxings were recorded outside this application. They survive only as chat messages, and
-the chronicle — the one place a Faxing is documented — could not reach them: the only door into
-it is closing a room.
+Seven Faxings were recorded outside this application. Five survive only as chat messages; the
+other two, the last nights before den andre orden, survive only as the operator's word. The
+chronicle — the one place a Faxing is documented — could not reach any of them: the only door
+into it is closing a room.
 
 This file is the record. The messages are reproduced as they were written, in Norwegian, with
 their nicknames and their typos. `scripts/history/legacy-events.json` encodes the same results
@@ -268,6 +269,37 @@ none; Ailin, Evine, Live and Eman are the least certain.
 
 ---
 
+## 29 October 2022 — Eldsterådets siste faxing (official)
+
+No message survives. This is the operator's record: the Eldsteråd's last faxetokt, held on 29
+October 2022, which Markus Johansen won in fifteen minutes and was thereby taken into the
+council as **Kong Markus I**. The Lore tells the same night (`src/components/Lore.tsx`, chapter
+«Pilgrimsreisene til Hoddevik»).
+
+**Encoded as** `legacy-2022-10-29`, official: Markus Johansen `Faxekonge` at 15:00.
+
+The record states fifteen minutes, not a clock time, so the encoding stores the duration and
+leaves `finishedAt` empty, as every row here does. It is the older of the two rows from before
+den andre orden was founded on 10 October 2024; the other five are Faxings of the second.
+
+---
+
+## 30 September 2024 — Gjenfødelsen (official)
+
+No message survives. This is the operator's record of the night the faxing came back: a
+hyttetur with prokom, eight at the table, and William Fagerstrøm winning in under ten minutes
+and being crowned **Faxekonge William I**. Ten days later, at Konsilet på A4, den andre orden
+was founded and he handed the crown on rather than keep it (`src/components/Lore.tsx`,
+chapter «Gjenfødelsen»).
+
+**Encoded as** `legacy-2024-09-30`, official: William Fagerstrøm `Faxekonge`, no duration.
+
+The Lore states «under 10 minutter» — a bound, not a time — so no duration is stored and the
+row reads `Tid ukjent`. The seven others who faxed that night are named in no record, so the
+row holds the one name it has.
+
+---
+
 ## How the encoding decided
 
 - **Durations, not instants.** None of the records gives a clock time, only a duration. The
@@ -287,7 +319,8 @@ none; Ailin, Evine, Live and Eman are the least certain.
   gender the organizer supplied instead of one read off the list: Kvartvar (written
   `Halvis (kvartvar)`, the parenthesis is his first name), Magnus Ouren, Sepanta Ganjei and
   Kirisan Premakanth are male; Sopika Visvalingam is female. No imported title depends on this:
-  every title above is transcribed.
+  every title above is transcribed. The 29 October 2022 and 30 September 2024 rows have no
+  message at all: the operator supplied their names, titles and genders together.
 - **Order.** The contestant order is the record's order, including the Hestemenn after the
   finishers. The archive keeps that order whenever a finisher has no duration.
 

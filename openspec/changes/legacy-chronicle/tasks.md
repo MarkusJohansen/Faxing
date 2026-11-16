@@ -4,6 +4,9 @@
 - [x] 1.3 Add the 4 November 2025 Faxing from the organizer's table
 - [ ] 1.4 Add that Faxing's original message, and confirm Sara's and Brage's times against it
 - [x] 1.2 Encode the same results in `scripts/history/legacy-events.json`, names verbatim
+- [x] 1.5 Add the two nights that survive only as the operator's word: 29 October 2022
+  (Eldsterådets siste faxing, Markus Johansen at 15:00) and 30 September 2024 (Gjenfødelsen,
+  William Fagerstrøm, no duration because the record states only «under 10 minutter»)
 
 ## 2. The seeder
 
@@ -34,4 +37,8 @@
 4.4 was run against a throwaway Postgres behind the built server: a preview, a missing and a
 wrong password, a write, a second run, a chronicle that already held a hand-entered event on
 18 September 2026, and a deleted event across a server restart. 4.5 and 4.6 are open: nobody has
-looked at the filed events in the interface, and nothing has been filed on the Pi.
+looked at the filed events in the interface, and nothing has been filed on the Pi. The two rows
+added under 1.5 are in the record and pass `--dry-run`, and they file with the same run.
+Adding them changed what the succession shows: 29 October 2022 and 30 September 2024 are the
+only reigns from before den andre orden, and they are what the founding mark in the crown lines
+separates from the Faxinger that follow.

@@ -2,8 +2,8 @@
 
 ### Requirement: The old Faxings are kept as a checked-in record
 The repository SHALL hold the old Faxings in two forms: `docs/legacy-faxinger.md` with the
-original messages, and `scripts/history/legacy-events.json` with the same results encoded for
-the seeder.
+original messages where one survives and the operator's account of the night where none does,
+and `scripts/history/legacy-events.json` with the same results encoded for the seeder.
 
 An encoded event SHALL carry a stable id, a title, a date, an `official` flag, and its
 contestants in recorded order. A contestant SHALL carry the name as the record wrote it, a
@@ -83,12 +83,12 @@ depend on the clock of the machine that filed it. A date that is not a real cale
 fail validation.
 
 #### Scenario: First run
-- **WHEN** the command runs with `--write` against a chronicle that has none of the five events
-- **THEN** five events are filed
+- **WHEN** the command runs with `--write` against a chronicle that has none of the seven events
+- **THEN** seven events are filed
 
 #### Scenario: Second run
 - **WHEN** the same command runs again
-- **THEN** no event changes, and the command reports five already there and nothing to file
+- **THEN** no event changes, and the command reports seven already there and nothing to file
 
 #### Scenario: A corrected event
 - **WHEN** a Faxepave corrects a name in a filed event and the command runs again
@@ -97,7 +97,7 @@ fail validation.
 #### Scenario: The day already has an event
 - **WHEN** the chronicle holds a hand-entered event dated 18 September 2026 and the command runs
 - **THEN** `legacy-2026-09-18` is not filed, the command names the hand-entered event, and the
-  other four events are filed
+  other six events are filed
 
 #### Scenario: The hand-entered event is removed
 - **WHEN** that hand-entered event is deleted and the command runs again
@@ -138,6 +138,10 @@ with it.
 - **WHEN** the ranking rules change and the seeder runs again
 - **THEN** no stored title changes, because no imported title was derived
 
+#### Scenario: The last of the first order
+- **WHEN** the 29 October 2022 event is seeded
+- **THEN** Markus Johansen is `Faxekonge` at 15:00, and it is the oldest row in the record
+
 ### Requirement: A missing time is shown as unknown
 A contestant with no recorded duration SHALL be displayed as `Tid ukjent` in the archive. The
 absence SHALL NOT be rendered as `0:00`, SHALL NOT be rendered as `Hestemann`, and SHALL NOT be
@@ -150,6 +154,11 @@ treated as an unfinished contestant in the archive's editor.
 #### Scenario: A Hestemann is not an unknown time
 - **WHEN** an event has both a Hestemann and a finisher with no time
 - **THEN** only the Hestemann row reads `Hestemann`; the finisher reads `Tid ukjent`
+
+#### Scenario: A king whose record states only a bound
+- **WHEN** the 30 September 2024 event is seeded, whose record says «under 10 minutter»
+- **THEN** William Fagerstrøm carries `Faxekonge` with no duration, and the archive reads
+  `Tid ukjent` rather than a time nobody wrote down
 
 ### Requirement: A record with a gap keeps its recorded order
 The archive SHALL order an event by duration when every finisher has one, and SHALL keep the

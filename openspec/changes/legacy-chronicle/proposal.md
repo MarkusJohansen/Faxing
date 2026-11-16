@@ -1,7 +1,8 @@
 ## Why
 
-The order's history is older than this application. Five Faxings are recorded only as chat
-messages, so the chronicle — the one place a Faxing is documented — begins after them. The only
+The order's history is older than this application. Seven Faxings are recorded outside it: five
+only as chat messages, and the last two nights of the first order only as the operator's word, so
+the chronicle — the one place a Faxing is documented — begins after them. The only
 door into `faxing_events` is closing a room, which a Faxing held before rooms existed cannot do.
 
 ## What Changes

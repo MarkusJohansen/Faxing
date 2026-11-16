@@ -2,7 +2,7 @@
 
 ### A checked-in fixture plus a seeder, not an importer in the interface
 
-The record is five Faxings, read once. An import screen would be a permanent feature for a
+The record is seven Faxings, read once. An import screen would be a permanent feature for a
 one-time job, and it would have to carry a parser for prose. A JSON file next to a transcript
 is reviewable in a pull request, diffable, and can be checked without a database.
 
@@ -33,12 +33,13 @@ Faxepave password and uses that, from any machine that can reach the site.
 
 Filing from `migrate()` at every start was built first and removed. It needed the record bundled
 into `server.cjs`, and because it re-ran unattended it needed a ledger table so that an event a
-Faxepave deleted did not return at the next deploy. That is permanent machinery for five rows
-written once, the same objection this design raises against an import screen. A command run once
+Faxepave deleted did not return at the next deploy. That is permanent machinery for the few
+rows in this record, written once, the same objection this design raises against an import
+screen. A command run once
 needs neither, and the person running it sees what happened.
 
 What is given up: a rebuilt database does not refill itself; the command is run again. And the
-five requests are not one transaction, so a failure part-way leaves some events filed. That is
+requests are not one transaction, so a failure part-way leaves some events filed. That is
 harmless, because the next run files only the ones still missing.
 
 ### An event is held back when its day is taken
